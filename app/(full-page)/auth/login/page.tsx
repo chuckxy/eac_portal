@@ -8,7 +8,7 @@ import { Button } from 'primereact/button';
 import { Toast } from 'primereact/toast';
 import { Page } from '@/types';
 import { LayoutContext } from '@/layout/context/layoutcontext';
-import { useAuth } from '.../../../layout/context/authcontext';
+import { useAuth } from '@/layout/context/authcontext';
 
 const Login: Page = () => {
     const { layoutConfig } = useContext(LayoutContext);
