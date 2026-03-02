@@ -14,6 +14,7 @@ import { Tag } from 'primereact/tag';
 import { confirmDialog } from 'primereact/confirmdialog';
 import PageHeader from '@/components/PageHeader';
 import StatusChip from '@/components/StatusChip';
+import BulkUploadDialog from '@/components/BulkUploadDialog';
 import { CoursesService } from '@/lib/service/CoursesService';
 import { LookupService } from '@/lib/service/LookupService';
 import { useAuth } from '@/layout/context/authcontext';
@@ -41,6 +42,7 @@ const CoursesPage = () => {
 
     const [departmentOptions, setDepartmentOptions] = useState<{ label: string; value: number }[]>([]);
     const [levelOptions, setLevelOptions] = useState<{ label: string; value: number }[]>([]);
+    const [showBulkUpload, setShowBulkUpload] = useState(false);
 
     const loadData = async () => {
         try {
@@ -84,7 +86,7 @@ const CoursesPage = () => {
     const save = async () => {
         try {
             const payload = editing ? { id: editing.id, ...formData } : formData;
-            const res = await CoursesService.saveCourse({ ...payload,isActive:formData.isActive?1:0 });
+            const res = await CoursesService.saveCourse({ ...payload, isActive: formData.isActive ? 1 : 0 });
             toast.current?.show({ severity: 'success', summary: 'Saved', detail: res.message || `Course "${formData.courseCode}" saved.`, life: 3000 });
             setShowDialog(false);
             await loadData();
@@ -122,10 +124,17 @@ const CoursesPage = () => {
     };
 
     const header = (
-        <span className="p-input-icon-left w-full sm:w-auto">
-            <i className="pi pi-search" />
-            <InputText placeholder="Search courses..." value={globalFilter} onChange={(e) => setGlobalFilter(e.target.value)} className="w-full sm:w-auto" />
-        </span>
+        <div className="flex flex-column sm:flex-row gap-2 sm:align-items-center sm:justify-content-between">
+            <span className="p-input-icon-left w-full sm:w-auto">
+                <i className="pi pi-search" />
+                <InputText placeholder="Search courses..." value={globalFilter} onChange={(e) => setGlobalFilter(e.target.value)} className="w-full sm:w-auto" />
+            </span>
+            {isAdmin && (
+                <div className="flex gap-2">
+                    <Button label="Upload" icon="pi pi-upload" className="p-button-outlined p-button-sm" onClick={() => setShowBulkUpload(true)} />
+                </div>
+            )}
+        </div>
     );
 
     return (
@@ -187,6 +196,33 @@ const CoursesPage = () => {
                         </div>
                     </div>
                 </Dialog>
+            )}
+
+            {isAdmin && (
+                <BulkUploadDialog
+                    visible={showBulkUpload}
+                    onHide={() => setShowBulkUpload(false)}
+                    title="Bulk Upload Courses"
+                    columns={[
+                        { field: 'courseCode', header: 'Course Code', required: true },
+                        { field: 'courseName', header: 'Course Name', required: true },
+                        { field: 'creditHours', header: 'Credit Hours' },
+                        { field: 'description', header: 'Description' }
+                    ]}
+                    dropdowns={[
+                        { key: 'departmentId', label: 'Department', placeholder: 'Select department', options: departmentOptions, filter: true },
+                        { key: 'levelId', label: 'Level', placeholder: 'Select level', options: levelOptions }
+                    ]}
+                    templateFileName="courses_upload_template.csv"
+                    onUpload={async (records, dropdownValues) => {
+                        return await CoursesService.bulkUploadCourses({
+                            courses: records,
+                            departmentId: dropdownValues.departmentId,
+                            levelId: dropdownValues.levelId
+                        });
+                    }}
+                    onComplete={loadData}
+                />
             )}
         </div>
     );

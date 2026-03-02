@@ -5,6 +5,13 @@ const TOKEN_KEY = 'sms_access_token';
 const REFRESH_KEY = 'sms_refresh_token';
 const USER_KEY = 'sms_user';
 
+export interface ChangePasswordResponse {
+    message: string;
+    accessToken: string;
+    refreshToken: string;
+    user: AuthUser;
+}
+
 export const AuthService = {
     /** Login with username/password */
     login(data: LoginRequest) {
@@ -26,9 +33,9 @@ export const AuthService = {
         return handleResponse<{ user: AuthUser }>(api.get('/auth/me'));
     },
 
-    /** Change password */
+    /** Change password — returns new tokens with mustChangePassword cleared */
     changePassword(currentPassword: string, newPassword: string) {
-        return handleResponse<{ message: string }>(api.post('/auth/change-password', { currentPassword, newPassword }));
+        return handleResponse<ChangePasswordResponse>(api.post('/auth/change-password', { currentPassword, newPassword }));
     },
 
     // ─── Token Storage ───────────────────────────────

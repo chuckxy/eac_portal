@@ -12,6 +12,7 @@ import { Avatar } from 'primereact/avatar';
 import { confirmDialog } from 'primereact/confirmdialog';
 import PageHeader from '@/components/PageHeader';
 import StatusChip from '@/components/StatusChip';
+import BulkUploadDialog from '@/components/BulkUploadDialog';
 import { UsersService } from '@/lib/service/UsersService';
 import { InstitutionService } from '@/lib/service/InstitutionService';
 import type { Student } from '@/types';
@@ -27,6 +28,7 @@ const StudentsPage = () => {
 
     const [programmeOptions, setProgrammeOptions] = useState<{ label: string; value: number }[]>([]);
     const [levelOptions, setLevelOptions] = useState<{ label: string; value: number }[]>([]);
+    const [showBulkUpload, setShowBulkUpload] = useState(false);
 
     const [formData, setFormData] = useState({
         studentIndex: '',
@@ -171,6 +173,7 @@ const StudentsPage = () => {
                 <InputText placeholder="Search by name or index..." value={globalFilter} onChange={(e) => setGlobalFilter(e.target.value)} className="w-full sm:w-auto" />
             </span>
             <div className="flex gap-2">
+                <Button label="Upload" icon="pi pi-upload" className="p-button-outlined p-button-sm" onClick={() => setShowBulkUpload(true)} />
                 <Button label="Export" icon="pi pi-download" className="p-button-outlined p-button-sm" />
             </div>
         </div>
@@ -198,7 +201,7 @@ const StudentsPage = () => {
                         <Column field="studentIndex" header="Index No." sortable style={{ width: '140px', minWidth: '140px' }} />
                         <Column header="Name" body={nameTemplate} sortable sortField="firstName" style={{ minWidth: '12rem' }} />
                         <Column field="programmeName" header="Programme" sortable style={{ minWidth: '10rem' }} />
-                        <Column field="levelName" header="Level" sortable style={{ width: '100px' }}  />
+                        <Column field="levelName" header="Level" sortable style={{ width: '100px' }} />
                         <Column header="Status" body={(row) => <StatusChip active={row.isActive} />} style={{ width: '80px' }} />
                         <Column header="Actions" body={actionTemplate} style={{ width: '120px' }} className="white-space-nowrap" />
                     </DataTable>
@@ -266,6 +269,36 @@ const StudentsPage = () => {
                     </div>
                 </div>
             </Dialog>
+
+            <BulkUploadDialog
+                visible={showBulkUpload}
+                onHide={() => setShowBulkUpload(false)}
+                title="Bulk Upload Students"
+                columns={[
+                    { field: 'studentIndex', header: 'Student Index', required: true },
+                    { field: 'firstName', header: 'First Name', required: true },
+                    { field: 'lastName', header: 'Last Name', required: true },
+                    { field: 'otherNames', header: 'Other Names' },
+                    { field: 'dateOfBirth', header: 'Date of Birth' },
+                    { field: 'gender', header: 'Gender' },
+                    { field: 'email', header: 'Email' },
+                    { field: 'phone', header: 'Phone' },
+                    { field: 'enrollmentDate', header: 'Enrollment Date' }
+                ]}
+                dropdowns={[
+                    { key: 'programmeId', label: 'Programme', placeholder: 'Select programme', options: programmeOptions, filter: true },
+                    { key: 'levelId', label: 'Level', placeholder: 'Select level', options: levelOptions }
+                ]}
+                templateFileName="students_upload_template.csv"
+                onUpload={async (records, dropdownValues) => {
+                    return await UsersService.bulkUploadStudents({
+                        students: records,
+                        programmeId: dropdownValues.programmeId,
+                        levelId: dropdownValues.levelId
+                    });
+                }}
+                onComplete={loadStudents}
+            />
         </div>
     );
 };

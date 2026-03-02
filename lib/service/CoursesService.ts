@@ -1,6 +1,14 @@
 import { api, handleResponse, SPResponse } from './apiClient';
 import { Course, CourseAssignment } from '@/types';
 
+export interface BulkCourseUploadResult {
+    message: string;
+    successCount: number;
+    errorCount: number;
+    total: number;
+    results: { row: number; courseCode: string; success: boolean; message: string }[];
+}
+
 export const CoursesService = {
     // ─── Courses ─────────────────────────────────────
 
@@ -11,6 +19,10 @@ export const CoursesService = {
 
     saveCourse(data: Partial<Course>) {
         return handleResponse<SPResponse>(api.post('/courses/list', data));
+    },
+
+    bulkUploadCourses(data: { courses: Record<string, any>[]; departmentId: number; levelId: number }) {
+        return handleResponse<BulkCourseUploadResult>(api.post('/courses/list/bulk', data));
     },
 
     deleteCourse(id: number) {

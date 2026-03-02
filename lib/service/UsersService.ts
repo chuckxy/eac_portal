@@ -1,6 +1,14 @@
 import { api, handleResponse, SPResponse } from './apiClient';
 import { Student, StudentDetail, Lecturer } from '@/types';
 
+export interface BulkUploadResult {
+    message: string;
+    successCount: number;
+    errorCount: number;
+    total: number;
+    results: { row: number; studentIndex?: string; staffId?: string; success: boolean; message: string }[];
+}
+
 export const UsersService = {
     // ─── Students ────────────────────────────────────
 
@@ -14,6 +22,10 @@ export const UsersService = {
 
     saveStudent(data: Partial<Student>) {
         return handleResponse<SPResponse>(api.post('/users/students', data));
+    },
+
+    bulkUploadStudents(data: { students: Record<string, any>[]; programmeId: number; levelId: number }) {
+        return handleResponse<BulkUploadResult>(api.post('/users/students/bulk', data));
     },
 
     toggleStudentStatus(studentIndex: string, isActive: boolean) {
@@ -32,6 +44,10 @@ export const UsersService = {
 
     saveLecturer(data: Partial<Lecturer>) {
         return handleResponse<SPResponse>(api.post('/users/lecturers', data));
+    },
+
+    bulkUploadLecturers(data: { lecturers: Record<string, any>[]; departmentId: number }) {
+        return handleResponse<BulkUploadResult>(api.post('/users/lecturers/bulk', data));
     },
 
     toggleLecturerStatus(id: number, isActive: boolean) {

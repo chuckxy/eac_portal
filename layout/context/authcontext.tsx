@@ -20,6 +20,8 @@ interface AuthContextValue {
     hasRole: (...roles: UserRole[]) => boolean;
     /** True if user is authenticated */
     isAuthenticated: boolean;
+    /** Update user in state and storage (e.g. after password change) */
+    updateUser: (user: AuthUser) => void;
 }
 
 const AuthContext = createContext<AuthContextValue>({
@@ -29,11 +31,15 @@ const AuthContext = createContext<AuthContextValue>({
     registerAdmin: async () => {},
     logout: () => {},
     hasRole: () => false,
-    isAuthenticated: false
+    isAuthenticated: false,
+    updateUser: () => {}
 });
 
 /** Public pages that don't require authentication */
 const PUBLIC_PATHS = ['/auth/login', '/auth/register'];
+
+/** Pages that require authentication but are exempt from mustChangePassword redirect */
+const PASSWORD_CHANGE_PATH = '/auth/change-password';
 
 /**
  * Route-based access control map.
@@ -131,13 +137,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (loading) return;
 
         const isPublic = PUBLIC_PATHS.some((p) => pathname?.startsWith(p));
+        const isPasswordChangePage = pathname === PASSWORD_CHANGE_PATH;
 
         if (!user && !isPublic) {
-            router.replace('/auth/login');
+            // Not logged in and not on a public page → go to login
+            // Allow change-password page only if user is set (handled below)
+            if (!isPasswordChangePage) {
+                router.replace('/auth/login');
+            } else {
+                // Not logged in on change-password page → go to login
+                router.replace('/auth/login');
+            }
+        } else if (user && user.mustChangePassword) {
+            // ─── Force password change ───────────────
+            // User must change password — only allow the change-password page
+            if (!isPasswordChangePage) {
+                router.replace(PASSWORD_CHANGE_PATH);
+            }
         } else if (user && isPublic) {
             // Redirect logged-in users away from login/register pages
             const dashboardPath = getDashboardPath(user.role);
             router.replace(dashboardPath);
+        } else if (user && isPasswordChangePage) {
+            // User already changed password but is still on change-password page
+            // Allow it — they can voluntarily change password again
         } else if (user && pathname && !isPublic) {
             // ─── Role-based route protection ─────────
             if (!isRouteAllowed(pathname, user.role)) {
@@ -155,8 +178,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             AuthService.saveUser(res.user);
             setUser(res.user);
 
-            const dashboardPath = getDashboardPath(res.user.role);
-            router.replace(dashboardPath);
+            if (res.user.mustChangePassword) {
+                router.replace(PASSWORD_CHANGE_PATH);
+            } else {
+                const dashboardPath = getDashboardPath(res.user.role);
+                router.replace(dashboardPath);
+            }
         },
         [router]
     );
@@ -185,6 +212,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         [user]
     );
 
+    const updateUser = useCallback((updatedUser: AuthUser) => {
+        setUser(updatedUser);
+        AuthService.saveUser(updatedUser);
+    }, []);
+
     const value = useMemo<AuthContextValue>(
         () => ({
             user,
@@ -193,21 +225,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             registerAdmin,
             logout,
             hasRole,
-            isAuthenticated: !!user
+            isAuthenticated: !!user,
+            updateUser
         }),
-        [user, loading, login, registerAdmin, logout, hasRole]
+        [user, loading, login, registerAdmin, logout, hasRole, updateUser]
     );
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-export const useAuth=(): AuthContextValue=> {
+export const useAuth = (): AuthContextValue => {
     const context = useContext(AuthContext);
     if (!context) {
         throw new Error('useAuth must be used within an AuthProvider');
     }
     return context;
-}
+};
 
 /** Return the default dashboard path for a given role */
 function getDashboardPath(role: UserRole): string {

@@ -401,6 +401,8 @@ export interface AuthUser {
     profileId: string | number;
     firstName: string;
     lastName: string;
+    /** True if user must change password before accessing the app */
+    mustChangePassword?: boolean;
 }
 
 export interface LoginRequest {

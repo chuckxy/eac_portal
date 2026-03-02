@@ -11,6 +11,7 @@ import { Avatar } from 'primereact/avatar';
 import { confirmDialog } from 'primereact/confirmdialog';
 import PageHeader from '@/components/PageHeader';
 import StatusChip from '@/components/StatusChip';
+import BulkUploadDialog from '@/components/BulkUploadDialog';
 import { UsersService } from '@/lib/service/UsersService';
 import { InstitutionService } from '@/lib/service/InstitutionService';
 import type { Lecturer } from '@/types';
@@ -25,6 +26,7 @@ const LecturersPage = () => {
     const [saving, setSaving] = useState(false);
 
     const [departmentOptions, setDepartmentOptions] = useState<{ label: string; value: number }[]>([]);
+    const [showBulkUpload, setShowBulkUpload] = useState(false);
 
     const [formData, setFormData] = useState({
         staffId: '',
@@ -157,10 +159,15 @@ const LecturersPage = () => {
     );
 
     const header = (
-        <span className="p-input-icon-left w-full sm:w-auto">
-            <i className="pi pi-search" />
-            <InputText placeholder="Search..." value={globalFilter} onChange={(e) => setGlobalFilter(e.target.value)} className="w-full sm:w-auto" />
-        </span>
+        <div className="flex flex-column sm:flex-row gap-2 sm:align-items-center sm:justify-content-between">
+            <span className="p-input-icon-left w-full sm:w-auto">
+                <i className="pi pi-search" />
+                <InputText placeholder="Search..." value={globalFilter} onChange={(e) => setGlobalFilter(e.target.value)} className="w-full sm:w-auto" />
+            </span>
+            <div className="flex gap-2">
+                <Button label="Upload" icon="pi pi-upload" className="p-button-outlined p-button-sm" onClick={() => setShowBulkUpload(true)} />
+            </div>
+        </div>
     );
 
     return (
@@ -237,6 +244,31 @@ const LecturersPage = () => {
                     </div>
                 </div>
             </Dialog>
+
+            <BulkUploadDialog
+                visible={showBulkUpload}
+                onHide={() => setShowBulkUpload(false)}
+                title="Bulk Upload Lecturers"
+                columns={[
+                    { field: 'staffId', header: 'Staff ID', required: true },
+                    { field: 'title', header: 'Title' },
+                    { field: 'firstName', header: 'First Name', required: true },
+                    { field: 'lastName', header: 'Last Name', required: true },
+                    { field: 'otherNames', header: 'Other Names' },
+                    { field: 'email', header: 'Email' },
+                    { field: 'phone', header: 'Phone' },
+                    { field: 'specialization', header: 'Specialization' }
+                ]}
+                dropdowns={[{ key: 'departmentId', label: 'Department', placeholder: 'Select department', options: departmentOptions, filter: true }]}
+                templateFileName="lecturers_upload_template.csv"
+                onUpload={async (records, dropdownValues) => {
+                    return await UsersService.bulkUploadLecturers({
+                        lecturers: records,
+                        departmentId: dropdownValues.departmentId
+                    });
+                }}
+                onComplete={loadLecturers}
+            />
         </div>
     );
 };
