@@ -26,6 +26,7 @@ const AcademicYearsPage = () => {
 
     const [formData, setFormData] = useState({ yearName: '', startDate: null as Date | null, endDate: null as Date | null, isCurrent: false });
 
+    //TODO: Move to service
     const loadYears = async () => {
         try {
             setLoading(true);
@@ -157,8 +158,8 @@ const AcademicYearsPage = () => {
                         tableStyle={{ minWidth: '30rem' }}
                     >
                         <Column field="yearName" header="Year" sortable style={{ minWidth: '8rem' }} />
-                        <Column header="Start" body={(row:AcademicYear)=><div>{format(new Date(row.startDate),'yyyy-MM-dd')}</div>} sortable style={{ minWidth: '7rem' }} />
-                        <Column header="End" body={(row:AcademicYear)=><div>{format(new Date(row.endDate),'yyyy-MM-dd')}</div>} sortable style={{ minWidth: '7rem' }} />
+                        <Column header="Start" body={(row: AcademicYear) => <div>{format(new Date(row.startDate), 'yyyy-MM-dd')}</div>} sortable style={{ minWidth: '7rem' }} />
+                        <Column header="End" body={(row: AcademicYear) => <div>{format(new Date(row.endDate), 'yyyy-MM-dd')}</div>} sortable style={{ minWidth: '7rem' }} />
                         <Column header="Current" body={(row) => <StatusChip active={row.isCurrent} activeLabel="Current" inactiveLabel="Past" />} style={{ width: '90px' }} />
                         <Column header="Actions" body={actionTemplate} style={{ width: '100px' }} className="white-space-nowrap" />
                     </DataTable>
