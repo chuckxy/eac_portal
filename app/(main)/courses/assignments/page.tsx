@@ -8,7 +8,7 @@ import { Dropdown } from 'primereact/dropdown';
 import { Toast } from 'primereact/toast';
 import { Tag } from 'primereact/tag';
 import { InputText } from 'primereact/inputtext';
-import { confirmDialog } from 'primereact/confirmdialog';
+import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import PageHeader from '@/components/PageHeader';
 import { CoursesService } from '@/lib/service/CoursesService';
 import { LookupService } from '@/lib/service/LookupService';
@@ -24,6 +24,7 @@ const CourseAssignmentsPage = () => {
     const [globalFilter, setGlobalFilter] = useState('');
     const [assignments, setAssignments] = useState<CourseAssignment[]>([]);
     const [loading, setLoading] = useState(true);
+    const [deletingId, setDeletingId] = useState<number | null>(null);
 
     const [formData, setFormData] = useState({
         courseId: null as number | null,
@@ -90,22 +91,53 @@ const CourseAssignmentsPage = () => {
         }
     };
 
-    const confirmDelete = (a: CourseAssignment) => {
-        confirmDialog({
-            message: `Remove "${a.courseCode}" assignment for ${a.lecturerName}?`,
-            header: 'Confirm Remove',
-            icon: 'pi pi-exclamation-triangle',
-            acceptClassName: 'p-button-danger',
-            accept: async () => {
-                try {
-                    const res = await CoursesService.deleteAssignment(a.id);
-                    toast.current?.show({ severity: 'success', summary: 'Removed', detail: res.message || 'Assignment removed.', life: 3000 });
-                    await loadData();
-                } catch (err) {
-                    toast.current?.show({ severity: 'error', summary: 'Error', detail: (err as any).response?.data?.message || (err as any).message, life: 3000 });
-                }
+    const confirmDelete = async (a: CourseAssignment) => {
+        setDeletingId(a.id);
+        try {
+            const deps = await CoursesService.getAssignmentDependencies(a.id);
+            if (deps.hasDependencies) {
+                const lines = Object.entries(deps.counts)
+                    .filter(([, v]) => v > 0)
+                    .map(([k, v]) => `${v} ${k}`);
+                confirmDialog({
+                    message: `"${a.courseCode}" assignment for ${a.lecturerName} has the following dependent records:\n\n• ${lines.join('\n• ')}\n\nDeleting will permanently remove ALL related records. Continue?`,
+                    header: 'Warning: Cascade Delete',
+                    icon: 'pi pi-exclamation-triangle',
+                    acceptClassName: 'p-button-danger',
+                    acceptLabel: 'Delete All',
+                    rejectLabel: 'Cancel',
+                    accept: async () => {
+                        try {
+                            const res = await CoursesService.cascadeDeleteAssignment(a.id);
+                            toast.current?.show({ severity: 'warn', summary: 'Removed', detail: res.message || 'Assignment and all dependents removed.', life: 4000 });
+                            await loadData();
+                        } catch (err) {
+                            toast.current?.show({ severity: 'error', summary: 'Error', detail: (err as any).response?.data?.message || (err as any).message, life: 3000 });
+                        }
+                    }
+                });
+            } else {
+                confirmDialog({
+                    message: `Remove "${a.courseCode}" assignment for ${a.lecturerName}? This cannot be undone.`,
+                    header: 'Confirm Remove',
+                    icon: 'pi pi-exclamation-triangle',
+                    acceptClassName: 'p-button-danger',
+                    accept: async () => {
+                        try {
+                            const res = await CoursesService.deleteAssignment(a.id);
+                            toast.current?.show({ severity: 'success', summary: 'Removed', detail: res.message || 'Assignment removed.', life: 3000 });
+                            await loadData();
+                        } catch (err) {
+                            toast.current?.show({ severity: 'error', summary: 'Error', detail: (err as any).response?.data?.message || (err as any).message, life: 3000 });
+                        }
+                    }
+                });
             }
-        });
+        } catch (err) {
+            toast.current?.show({ severity: 'error', summary: 'Error', detail: (err as any).response?.data?.message || (err as any).message, life: 3000 });
+        } finally {
+            setDeletingId(null);
+        }
     };
 
     const actionTemplate = (row: CourseAssignment) => {
@@ -113,7 +145,7 @@ const CourseAssignmentsPage = () => {
         return (
             <div className="flex gap-1">
                 <Button icon="pi pi-pencil" className="p-button-text p-button-sm" onClick={() => openEdit(row)} />
-                <Button icon="pi pi-trash" className="p-button-text p-button-danger p-button-sm" onClick={() => confirmDelete(row)} />
+                <Button icon="pi pi-trash" className="p-button-text p-button-danger p-button-sm" onClick={() => confirmDelete(row)} loading={deletingId === row.id} />
             </div>
         );
     };
@@ -137,6 +169,7 @@ const CourseAssignmentsPage = () => {
     return (
         <div className="grid">
             <Toast ref={toast} />
+            <ConfirmDialog />
             <div className="col-12">
                 <PageHeader
                     title="Course Assignments"

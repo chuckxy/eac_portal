@@ -8,7 +8,7 @@ import { InputText } from 'primereact/inputtext';
 import { Dropdown } from 'primereact/dropdown';
 import { Toast } from 'primereact/toast';
 import { Avatar } from 'primereact/avatar';
-import { confirmDialog } from 'primereact/confirmdialog';
+import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import PageHeader from '@/components/PageHeader';
 import StatusChip from '@/components/StatusChip';
 import BulkUploadDialog from '@/components/BulkUploadDialog';
@@ -173,6 +173,7 @@ const LecturersPage = () => {
     return (
         <div className="grid">
             <Toast ref={toast} />
+            <ConfirmDialog />
             <div className="col-12">
                 <PageHeader title="Lecturers" subtitle="Manage lecturer profiles" actionLabel="Add Lecturer" onAction={openNew} />
                 <div className="surface-card shadow-1 border-round p-3">

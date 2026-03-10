@@ -12,10 +12,10 @@ export const metadata: Metadata = {
     viewport: { initialScale: 1, width: 'device-width' },
     openGraph: {
         type: 'website',
-        title: 'PrimeReact Atlantis-REACT',
-        url: 'https://www.primefaces.org/Atlantis-react',
+        title: 'EAC Portal',
+        url: 'https://www.emcaportal.org',
         description: 'Ejura Agricultural College Portal. Built with React and PrimeReact.',
-        images: ['https://www.primefaces.org/static/social/Atlantis-react.png'],
+        images: ['https://www.emcaportal.org'],
         ttl: 604800
     },
     icons: {

@@ -9,7 +9,7 @@ import { InputNumber } from 'primereact/inputnumber';
 import { Dropdown } from 'primereact/dropdown';
 import { InputSwitch } from 'primereact/inputswitch';
 import { Toast } from 'primereact/toast';
-import { confirmDialog } from 'primereact/confirmdialog';
+import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import PageHeader from '@/components/PageHeader';
 import StatusChip from '@/components/StatusChip';
 import { InstitutionService } from '@/lib/service/InstitutionService';
@@ -23,6 +23,7 @@ const ProgrammesPage = () => {
     const [formData, setFormData] = useState({ facultyId: null as number | null, departmentId: null as number | null, programmeName: '', programmeCode: '', duration: 4, isActive: true });
     const [programmes, setProgrammes] = useState<Programme[]>([]);
     const [loading, setLoading] = useState(true);
+    const [deletingId, setDeletingId] = useState<number | null>(null);
     const [facultyOptions, setFacultyOptions] = useState<{ label: string; value: number }[]>([]);
     const [departmentOptions, setDepartmentOptions] = useState<{ label: string; value: number }[]>([]);
 
@@ -98,28 +99,59 @@ const ProgrammesPage = () => {
         }
     };
 
-    const confirmDelete = (p: Programme) => {
-        confirmDialog({
-            message: `Delete "${p.programmeName}"?`,
-            header: 'Confirm Delete',
-            icon: 'pi pi-exclamation-triangle',
-            acceptClassName: 'p-button-danger',
-            accept: async () => {
-                try {
-                    const res = await InstitutionService.deleteProgramme(p.id);
-                    toast.current?.show({ severity: 'success', summary: 'Deleted', detail: res.message || 'Programme deleted.', life: 3000 });
-                    await loadData();
-                } catch (err) {
-                    toast.current?.show({ severity: 'error', summary: 'Error', detail: (err as any).response?.data?.message || (err as any).message, life: 3000 });
-                }
+    const confirmDelete = async (p: Programme) => {
+        setDeletingId(p.id);
+        try {
+            const deps = await InstitutionService.getProgrammeDependencies(p.id);
+            if (deps.hasDependencies) {
+                const lines = Object.entries(deps.counts)
+                    .filter(([, v]) => v > 0)
+                    .map(([k, v]) => `${v} ${k}`);
+                confirmDialog({
+                    message: `"${p.programmeName}" has the following dependent records:\n\n• ${lines.join('\n• ')}\n\nDeleting will permanently remove ALL related records. Continue?`,
+                    header: 'Warning: Cascade Delete',
+                    icon: 'pi pi-exclamation-triangle',
+                    acceptClassName: 'p-button-danger',
+                    acceptLabel: 'Delete All',
+                    rejectLabel: 'Cancel',
+                    accept: async () => {
+                        try {
+                            const res = await InstitutionService.cascadeDeleteProgramme(p.id);
+                            toast.current?.show({ severity: 'warn', summary: 'Deleted', detail: res.message || 'Programme and all dependents removed.', life: 4000 });
+                            await loadData();
+                        } catch (err) {
+                            toast.current?.show({ severity: 'error', summary: 'Error', detail: (err as any).response?.data?.message || (err as any).message, life: 3000 });
+                        }
+                    }
+                });
+            } else {
+                confirmDialog({
+                    message: `Delete "${p.programmeName}"? This cannot be undone.`,
+                    header: 'Confirm Delete',
+                    icon: 'pi pi-exclamation-triangle',
+                    acceptClassName: 'p-button-danger',
+                    accept: async () => {
+                        try {
+                            const res = await InstitutionService.deleteProgramme(p.id);
+                            toast.current?.show({ severity: 'success', summary: 'Deleted', detail: res.message || 'Programme deleted.', life: 3000 });
+                            await loadData();
+                        } catch (err) {
+                            toast.current?.show({ severity: 'error', summary: 'Error', detail: (err as any).response?.data?.message || (err as any).message, life: 3000 });
+                        }
+                    }
+                });
             }
-        });
+        } catch (err) {
+            toast.current?.show({ severity: 'error', summary: 'Error', detail: (err as any).response?.data?.message || (err as any).message, life: 3000 });
+        } finally {
+            setDeletingId(null);
+        }
     };
 
     const actionTemplate = (row: Programme) => (
         <div className="flex gap-1">
             <Button icon="pi pi-pencil" className="p-button-text p-button-sm" onClick={() => openEdit(row)} />
-            <Button icon="pi pi-trash" className="p-button-text p-button-danger p-button-sm" onClick={() => confirmDelete(row)} />
+            <Button icon="pi pi-trash" className="p-button-text p-button-danger p-button-sm" onClick={() => confirmDelete(row)} loading={deletingId === row.id} />
         </div>
     );
 
@@ -133,6 +165,7 @@ const ProgrammesPage = () => {
     return (
         <div className="grid">
             <Toast ref={toast} />
+            <ConfirmDialog />
             <div className="col-12">
                 <PageHeader title="Programmes" subtitle="Manage degree programmes" actionLabel="New Programme" onAction={openNew} />
                 <div className="surface-card shadow-1 border-round p-3">

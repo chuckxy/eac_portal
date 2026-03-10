@@ -84,11 +84,11 @@ const GradingScalePage = () => {
                 <div className="surface-card shadow-1 border-round p-3">
                     <DataTable value={grades} editMode="cell" responsiveLayout="scroll" className="p-datatable-sm" emptyMessage="No grades configured." loading={loading} tableStyle={{ minWidth: '30rem' }}>
                         <Column field="grade" header="Grade" body={gradeTemplate} style={{ width: '80px' }} />
-                        <Column header="Score Range" body={rangeTemplate} style={{ minWidth: '8rem' }} className="hidden sm:table-cell" />
+                        <Column header="Score Range" body={rangeTemplate} style={{ minWidth: '8rem' }} />
                         <Column field="minScore" header="Min %" editor={numberEditor} onCellEditComplete={onCellEditComplete} sortable style={{ width: '100px' }} className="text-center" />
                         <Column field="maxScore" header="Max %" editor={numberEditor} onCellEditComplete={onCellEditComplete} sortable style={{ width: '100px' }} className="text-center" />
                         <Column field="gradePoint" header="Grade Point" body={gpTemplate} editor={gpEditor} onCellEditComplete={onCellEditComplete} style={{ width: '110px' }} className="text-center" />
-                        <Column field="description" header="Description" editor={textEditor} onCellEditComplete={onCellEditComplete} style={{ minWidth: '8rem' }} className="hidden md:table-cell" />
+                        <Column field="description" header="Description" editor={textEditor} onCellEditComplete={onCellEditComplete} style={{ minWidth: '8rem' }} />
                     </DataTable>
                 </div>
             </div>

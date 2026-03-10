@@ -9,7 +9,7 @@ import { Dropdown } from 'primereact/dropdown';
 import { Calendar } from 'primereact/calendar';
 import { Toast } from 'primereact/toast';
 import { Avatar } from 'primereact/avatar';
-import { confirmDialog } from 'primereact/confirmdialog';
+import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import PageHeader from '@/components/PageHeader';
 import StatusChip from '@/components/StatusChip';
 import BulkUploadDialog from '@/components/BulkUploadDialog';
@@ -182,6 +182,7 @@ const StudentsPage = () => {
     return (
         <div className="grid">
             <Toast ref={toast} />
+            <ConfirmDialog />
             <div className="col-12">
                 <PageHeader title="Students" subtitle="Manage student records and enrolment" actionLabel="Register Student" onAction={openNew} />
                 <div className="surface-card shadow-1 border-round p-3">

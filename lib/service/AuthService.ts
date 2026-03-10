@@ -38,6 +38,28 @@ export const AuthService = {
         return handleResponse<ChangePasswordResponse>(api.post('/auth/change-password', { currentPassword, newPassword }));
     },
 
+    // ─── Password Reset (public, no auth) ────────────
+
+    /** Step 1: Verify user exists and has a phone number */
+    verifyUser(username: string) {
+        return handleResponse<{ message: string; userId: number; maskedPhone: string; role: string }>(api.post('/auth/verify-user', { username }));
+    },
+
+    /** Step 2: Send OTP to user's phone */
+    sendResetOtp(userId: number, phone: string) {
+        return handleResponse<{ message: string; userId: number }>(api.post('/auth/send-reset-otp', { userId, phone }));
+    },
+
+    /** Step 3: Verify OTP and get reset token */
+    verifyOtp(userId: number, otp: string) {
+        return handleResponse<{ message: string; resetToken: string; userId: number }>(api.post('/auth/verify-otp', { userId, otp }));
+    },
+
+    /** Step 4: Reset password using reset token */
+    resetPassword(userId: number, resetToken: string, newPassword: string) {
+        return handleResponse<{ message: string }>(api.post('/auth/reset-password', { userId, resetToken, newPassword }));
+    },
+
     // ─── Token Storage ───────────────────────────────
 
     saveTokens(accessToken: string, refreshToken: string) {

@@ -108,7 +108,7 @@ const AppConfig = (props: AppConfigProps) => {
 
     return (
         <div id="layout-config">
-            <a
+            {/* <a
                 className="layout-config-button"
                 onClick={() =>
                     setLayoutState((prevState) => ({
@@ -118,7 +118,7 @@ const AppConfig = (props: AppConfigProps) => {
                 }
             >
                 <i className="pi pi-cog"></i>
-            </a>
+            </a> */}
 
             <Sidebar
                 visible={layoutState.configSidebarVisible}

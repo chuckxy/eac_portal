@@ -1,6 +1,11 @@
 import { api, handleResponse, SPResponse } from './apiClient';
 import { AcademicYear, Semester } from '@/types';
 
+export interface DependencyInfo {
+    hasDependencies: boolean;
+    counts: Record<string, number>;
+}
+
 export const AcademicService = {
     // ─── Academic Years ──────────────────────────────
 
@@ -20,6 +25,14 @@ export const AcademicService = {
         return handleResponse<SPResponse>(api.delete(`/academic/years/${id}`));
     },
 
+    getYearDependencies(id: number) {
+        return handleResponse<DependencyInfo>(api.get(`/academic/years/${id}/dependencies`));
+    },
+
+    cascadeDeleteYear(id: number) {
+        return handleResponse<SPResponse>(api.delete(`/academic/years/${id}/cascade`));
+    },
+
     // ─── Academic Semesters ──────────────────────────
 
     getSemesters(yearId?: number) {
@@ -33,5 +46,13 @@ export const AcademicService = {
 
     deleteSemester(id: number) {
         return handleResponse<SPResponse>(api.delete(`/academic/semesters/${id}`));
+    },
+
+    getSemesterDependencies(id: number) {
+        return handleResponse<DependencyInfo>(api.get(`/academic/semesters/${id}/dependencies`));
+    },
+
+    cascadeDeleteSemester(id: number) {
+        return handleResponse<SPResponse>(api.delete(`/academic/semesters/${id}/cascade`));
     }
 };

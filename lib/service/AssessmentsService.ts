@@ -1,5 +1,6 @@
 import { api, handleResponse, SPResponse } from './apiClient';
 import { AssessmentType, Assessment } from '@/types';
+import { DependencyInfo } from './AcademicService';
 
 export const AssessmentsService = {
     // ─── Assessment Types ────────────────────────────
@@ -16,6 +17,14 @@ export const AssessmentsService = {
         return handleResponse<SPResponse>(api.delete(`/assessments/types/${id}`));
     },
 
+    getTypeDependencies(id: number) {
+        return handleResponse<DependencyInfo>(api.get(`/assessments/types/${id}/dependencies`));
+    },
+
+    cascadeDeleteType(id: number) {
+        return handleResponse<SPResponse>(api.delete(`/assessments/types/${id}/cascade`));
+    },
+
     // ─── Assessments ─────────────────────────────────
 
     getAssessments(assignmentId?: number) {
@@ -29,5 +38,13 @@ export const AssessmentsService = {
 
     deleteAssessment(id: number) {
         return handleResponse<SPResponse>(api.delete(`/assessments/list/${id}`));
+    },
+
+    getAssessmentDependencies(id: number) {
+        return handleResponse<DependencyInfo>(api.get(`/assessments/list/${id}/dependencies`));
+    },
+
+    cascadeDeleteAssessment(id: number) {
+        return handleResponse<SPResponse>(api.delete(`/assessments/list/${id}/cascade`));
     }
 };

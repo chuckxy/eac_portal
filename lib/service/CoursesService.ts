@@ -1,5 +1,6 @@
 import { api, handleResponse, SPResponse } from './apiClient';
 import { Course, CourseAssignment } from '@/types';
+import { DependencyInfo } from './AcademicService';
 
 export interface BulkCourseUploadResult {
     message: string;
@@ -29,6 +30,14 @@ export const CoursesService = {
         return handleResponse<SPResponse>(api.delete(`/courses/list/${id}`));
     },
 
+    getCourseDependencies(id: number) {
+        return handleResponse<DependencyInfo>(api.get(`/courses/list/${id}/dependencies`));
+    },
+
+    cascadeDeleteCourse(id: number) {
+        return handleResponse<SPResponse>(api.delete(`/courses/list/${id}/cascade`));
+    },
+
     // ─── Course Assignments ──────────────────────────
 
     getAssignments(params?: { semesterId?: number; lecturerId?: number }) {
@@ -41,5 +50,13 @@ export const CoursesService = {
 
     deleteAssignment(id: number) {
         return handleResponse<SPResponse>(api.delete(`/courses/assignments/${id}`));
+    },
+
+    getAssignmentDependencies(id: number) {
+        return handleResponse<DependencyInfo>(api.get(`/courses/assignments/${id}/dependencies`));
+    },
+
+    cascadeDeleteAssignment(id: number) {
+        return handleResponse<SPResponse>(api.delete(`/courses/assignments/${id}/cascade`));
     }
 };

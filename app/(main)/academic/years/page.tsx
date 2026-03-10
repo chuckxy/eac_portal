@@ -8,7 +8,7 @@ import { InputText } from 'primereact/inputtext';
 import { Calendar } from 'primereact/calendar';
 import { InputSwitch } from 'primereact/inputswitch';
 import { Toast } from 'primereact/toast';
-import { confirmDialog } from 'primereact/confirmdialog';
+import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import { AcademicService } from '@/lib/service/AcademicService';
 import PageHeader from '@/components/PageHeader';
 import StatusChip from '@/components/StatusChip';
@@ -22,6 +22,7 @@ const AcademicYearsPage = () => {
     const [globalFilter, setGlobalFilter] = useState('');
     const [years, setYears] = useState<AcademicYear[]>([]);
     const [loading, setLoading] = useState(true);
+    const [deletingId, setDeletingId] = useState<number | null>(null);
 
     const [formData, setFormData] = useState({ yearName: '', startDate: null as Date | null, endDate: null as Date | null, isCurrent: false });
 
@@ -71,28 +72,59 @@ const AcademicYearsPage = () => {
         }
     };
 
-    const confirmDelete = (year: AcademicYear) => {
-        confirmDialog({
-            message: `Delete academic year "${year.yearName}"? This cannot be undone.`,
-            header: 'Confirm Delete',
-            icon: 'pi pi-exclamation-triangle',
-            acceptClassName: 'p-button-danger',
-            accept: async () => {
-                try {
-                    const res = await AcademicService.deleteYear(year.id);
-                    toast.current?.show({ severity: 'info', summary: 'Deleted', detail: res.message || `${year.yearName} removed.`, life: 3000 });
-                    await loadYears();
-                } catch (err) {
-                    toast.current?.show({ severity: 'error', summary: 'Error', detail: (err as any).response?.data?.message || (err as any).message, life: 3000 });
-                }
+    const confirmDelete = async (year: AcademicYear) => {
+        setDeletingId(year.id);
+        try {
+            const deps = await AcademicService.getYearDependencies(year.id);
+            if (deps.hasDependencies) {
+                const lines = Object.entries(deps.counts)
+                    .filter(([, v]) => v > 0)
+                    .map(([k, v]) => `${v} ${k}`);
+                confirmDialog({
+                    message: `"${year.yearName}" has the following dependent records:\n\n• ${lines.join('\n• ')}\n\nDeleting will permanently remove ALL related records. Continue?`,
+                    header: 'Warning: Cascade Delete',
+                    icon: 'pi pi-exclamation-triangle',
+                    acceptClassName: 'p-button-danger',
+                    acceptLabel: 'Delete All',
+                    rejectLabel: 'Cancel',
+                    accept: async () => {
+                        try {
+                            const res = await AcademicService.cascadeDeleteYear(year.id);
+                            toast.current?.show({ severity: 'warn', summary: 'Deleted', detail: res.message || `${year.yearName} and all dependents removed.`, life: 4000 });
+                            await loadYears();
+                        } catch (err) {
+                            toast.current?.show({ severity: 'error', summary: 'Error', detail: (err as any).response?.data?.message || (err as any).message, life: 3000 });
+                        }
+                    }
+                });
+            } else {
+                confirmDialog({
+                    message: `Delete academic year "${year.yearName}"? This cannot be undone.`,
+                    header: 'Confirm Delete',
+                    icon: 'pi pi-exclamation-triangle',
+                    acceptClassName: 'p-button-danger',
+                    accept: async () => {
+                        try {
+                            const res = await AcademicService.deleteYear(year.id);
+                            toast.current?.show({ severity: 'info', summary: 'Deleted', detail: res.message || `${year.yearName} removed.`, life: 3000 });
+                            await loadYears();
+                        } catch (err) {
+                            toast.current?.show({ severity: 'error', summary: 'Error', detail: (err as any).response?.data?.message || (err as any).message, life: 3000 });
+                        }
+                    }
+                });
             }
-        });
+        } catch (err) {
+            toast.current?.show({ severity: 'error', summary: 'Error', detail: (err as any).response?.data?.message || (err as any).message, life: 3000 });
+        } finally {
+            setDeletingId(null);
+        }
     };
 
     const actionTemplate = (row: AcademicYear) => (
         <div className="flex gap-1">
             <Button icon="pi pi-pencil" className="p-button-text p-button-sm" onClick={() => openEdit(row)} tooltip="Edit" tooltipOptions={{ position: 'top' }} />
-            <Button icon="pi pi-trash" className="p-button-text p-button-danger p-button-sm" onClick={() => confirmDelete(row)} tooltip="Delete" tooltipOptions={{ position: 'top' }} />
+            <Button icon="pi pi-trash" className="p-button-text p-button-danger p-button-sm" onClick={() => confirmDelete(row)} loading={deletingId === row.id} tooltip="Delete" tooltipOptions={{ position: 'top' }} />
         </div>
     );
 
@@ -108,6 +140,7 @@ const AcademicYearsPage = () => {
     return (
         <div className="grid">
             <Toast ref={toast} />
+            <ConfirmDialog />
             <div className="col-12">
                 <PageHeader title="Academic Years" subtitle="Manage university academic year calendar" actionLabel="New Academic Year" onAction={openNew} />
                 <div className="surface-card shadow-1 border-round p-3">

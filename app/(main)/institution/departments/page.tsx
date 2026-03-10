@@ -7,7 +7,7 @@ import { Dialog } from 'primereact/dialog';
 import { InputText } from 'primereact/inputtext';
 import { Dropdown } from 'primereact/dropdown';
 import { Toast } from 'primereact/toast';
-import { confirmDialog } from 'primereact/confirmdialog';
+import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import PageHeader from '@/components/PageHeader';
 import { InstitutionService } from '@/lib/service/InstitutionService';
 import type { Department } from '@/types';
@@ -20,6 +20,7 @@ const DepartmentsPage = () => {
     const [formData, setFormData] = useState({ facultyId: null as number | null, departmentName: '', departmentCode: '' });
     const [departments, setDepartments] = useState<Department[]>([]);
     const [loading, setLoading] = useState(true);
+    const [deletingId, setDeletingId] = useState<number | null>(null);
     const [facultyOptions, setFacultyOptions] = useState<{ label: string; value: number }[]>([]);
 
     const loadData = async () => {
@@ -72,28 +73,59 @@ const DepartmentsPage = () => {
         }
     };
 
-    const confirmDelete = (d: Department) => {
-        confirmDialog({
-            message: `Delete "${d.departmentName}"?`,
-            header: 'Confirm Delete',
-            icon: 'pi pi-exclamation-triangle',
-            acceptClassName: 'p-button-danger',
-            accept: async () => {
-                try {
-                    const res = await InstitutionService.deleteDepartment(d.id);
-                    toast.current?.show({ severity: 'success', summary: 'Deleted', detail: res.message || 'Department deleted.', life: 3000 });
-                    await loadData();
-                } catch (err) {
-                    toast.current?.show({ severity: 'error', summary: 'Error', detail: (err as any).response?.data?.message || (err as any).message, life: 3000 });
-                }
+    const confirmDelete = async (d: Department) => {
+        setDeletingId(d.id);
+        try {
+            const deps = await InstitutionService.getDepartmentDependencies(d.id);
+            if (deps.hasDependencies) {
+                const lines = Object.entries(deps.counts)
+                    .filter(([, v]) => v > 0)
+                    .map(([k, v]) => `${v} ${k}`);
+                confirmDialog({
+                    message: `"${d.departmentName}" has the following dependent records:\n\n• ${lines.join('\n• ')}\n\nDeleting will permanently remove ALL related records. Continue?`,
+                    header: 'Warning: Cascade Delete',
+                    icon: 'pi pi-exclamation-triangle',
+                    acceptClassName: 'p-button-danger',
+                    acceptLabel: 'Delete All',
+                    rejectLabel: 'Cancel',
+                    accept: async () => {
+                        try {
+                            const res = await InstitutionService.cascadeDeleteDepartment(d.id);
+                            toast.current?.show({ severity: 'warn', summary: 'Deleted', detail: res.message || 'Department and all dependents removed.', life: 4000 });
+                            await loadData();
+                        } catch (err) {
+                            toast.current?.show({ severity: 'error', summary: 'Error', detail: (err as any).response?.data?.message || (err as any).message, life: 3000 });
+                        }
+                    }
+                });
+            } else {
+                confirmDialog({
+                    message: `Delete "${d.departmentName}"? This cannot be undone.`,
+                    header: 'Confirm Delete',
+                    icon: 'pi pi-exclamation-triangle',
+                    acceptClassName: 'p-button-danger',
+                    accept: async () => {
+                        try {
+                            const res = await InstitutionService.deleteDepartment(d.id);
+                            toast.current?.show({ severity: 'success', summary: 'Deleted', detail: res.message || 'Department deleted.', life: 3000 });
+                            await loadData();
+                        } catch (err) {
+                            toast.current?.show({ severity: 'error', summary: 'Error', detail: (err as any).response?.data?.message || (err as any).message, life: 3000 });
+                        }
+                    }
+                });
             }
-        });
+        } catch (err) {
+            toast.current?.show({ severity: 'error', summary: 'Error', detail: (err as any).response?.data?.message || (err as any).message, life: 3000 });
+        } finally {
+            setDeletingId(null);
+        }
     };
 
     const actionTemplate = (row: Department) => (
         <div className="flex gap-1">
             <Button icon="pi pi-pencil" className="p-button-text p-button-sm" onClick={() => openEdit(row)} />
-            <Button icon="pi pi-trash" className="p-button-text p-button-danger p-button-sm" onClick={() => confirmDelete(row)} />
+            <Button icon="pi pi-trash" className="p-button-text p-button-danger p-button-sm" onClick={() => confirmDelete(row)} loading={deletingId === row.id} />
         </div>
     );
 
@@ -107,6 +139,7 @@ const DepartmentsPage = () => {
     return (
         <div className="grid">
             <Toast ref={toast} />
+            <ConfirmDialog />
             <div className="col-12">
                 <PageHeader title="Departments" subtitle="Manage departments under faculties" actionLabel="New Department" onAction={openNew} />
                 <div className="surface-card shadow-1 border-round p-3">
@@ -124,7 +157,7 @@ const DepartmentsPage = () => {
                     >
                         <Column field="departmentCode" header="Code" sortable style={{ width: '80px' }} />
                         <Column field="departmentName" header="Department" sortable style={{ minWidth: '10rem' }} />
-                        <Column field="facultyName" header="Faculty" sortable className="hidden md:table-cell" style={{ minWidth: '8rem' }} />
+                        <Column field="facultyName" header="Faculty" sortable style={{ minWidth: '8rem' }} />
                         <Column header="Actions" body={actionTemplate} style={{ width: '90px' }} className="white-space-nowrap" />
                     </DataTable>
                 </div>

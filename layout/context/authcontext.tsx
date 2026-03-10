@@ -36,7 +36,7 @@ const AuthContext = createContext<AuthContextValue>({
 });
 
 /** Public pages that don't require authentication */
-const PUBLIC_PATHS = ['/auth/login', '/auth/register'];
+const PUBLIC_PATHS = ['/auth/login', '/auth/register', '/auth/forgot-password'];
 
 /** Pages that require authentication but are exempt from mustChangePassword redirect */
 const PASSWORD_CHANGE_PATH = '/auth/change-password';

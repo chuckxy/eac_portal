@@ -9,7 +9,7 @@ import { Calendar } from 'primereact/calendar';
 import { Dropdown } from 'primereact/dropdown';
 import { InputSwitch } from 'primereact/inputswitch';
 import { Toast } from 'primereact/toast';
-import { confirmDialog } from 'primereact/confirmdialog';
+import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import PageHeader from '@/components/PageHeader';
 import StatusChip from '@/components/StatusChip';
 import { AcademicService } from '@/lib/service/AcademicService';
@@ -25,6 +25,7 @@ const SemestersPage = () => {
     const [loading, setLoading] = useState(true);
     const [academicYearOptions, setAcademicYearOptions] = useState<{ label: string; value: number }[]>([]);
     const [filterYearId, setFilterYearId] = useState<number | null>(null);
+    const [deletingId, setDeletingId] = useState<number | null>(null);
 
     const [formData, setFormData] = useState({ academicYearId: null as number | null, semesterName: '', startDate: null as Date | null, endDate: null as Date | null, isCurrent: false });
 
@@ -89,28 +90,59 @@ const SemestersPage = () => {
         }
     };
 
-    const confirmDelete = (sem: Semester) => {
-        confirmDialog({
-            message: `Delete "${sem.semesterName}" for ${sem.yearName}?`,
-            header: 'Confirm Delete',
-            icon: 'pi pi-exclamation-triangle',
-            acceptClassName: 'p-button-danger',
-            accept: async () => {
-                try {
-                    const res = await AcademicService.deleteSemester(sem.id);
-                    toast.current?.show({ severity: 'info', summary: 'Deleted', detail: res.message || `${sem.semesterName} removed.`, life: 3000 });
-                    await loadSemesters(filterYearId);
-                } catch (err) {
-                    toast.current?.show({ severity: 'error', summary: 'Error', detail: (err as any).response?.data?.message || (err as any).message, life: 3000 });
-                }
+    const confirmDelete = async (sem: Semester) => {
+        setDeletingId(sem.id);
+        try {
+            const deps = await AcademicService.getSemesterDependencies(sem.id);
+            if (deps.hasDependencies) {
+                const lines = Object.entries(deps.counts)
+                    .filter(([, v]) => v > 0)
+                    .map(([k, v]) => `${v} ${k}`);
+                confirmDialog({
+                    message: `"${sem.semesterName}" (${sem.yearName}) has the following dependent records:\n\n• ${lines.join('\n• ')}\n\nDeleting will permanently remove ALL related records. Continue?`,
+                    header: 'Warning: Cascade Delete',
+                    icon: 'pi pi-exclamation-triangle',
+                    acceptClassName: 'p-button-danger',
+                    acceptLabel: 'Delete All',
+                    rejectLabel: 'Cancel',
+                    accept: async () => {
+                        try {
+                            const res = await AcademicService.cascadeDeleteSemester(sem.id);
+                            toast.current?.show({ severity: 'warn', summary: 'Deleted', detail: res.message || `${sem.semesterName} and all dependents removed.`, life: 4000 });
+                            await loadSemesters(filterYearId);
+                        } catch (err) {
+                            toast.current?.show({ severity: 'error', summary: 'Error', detail: (err as any).response?.data?.message || (err as any).message, life: 3000 });
+                        }
+                    }
+                });
+            } else {
+                confirmDialog({
+                    message: `Delete "${sem.semesterName}" for ${sem.yearName}?`,
+                    header: 'Confirm Delete',
+                    icon: 'pi pi-exclamation-triangle',
+                    acceptClassName: 'p-button-danger',
+                    accept: async () => {
+                        try {
+                            const res = await AcademicService.deleteSemester(sem.id);
+                            toast.current?.show({ severity: 'info', summary: 'Deleted', detail: res.message || `${sem.semesterName} removed.`, life: 3000 });
+                            await loadSemesters(filterYearId);
+                        } catch (err) {
+                            toast.current?.show({ severity: 'error', summary: 'Error', detail: (err as any).response?.data?.message || (err as any).message, life: 3000 });
+                        }
+                    }
+                });
             }
-        });
+        } catch (err) {
+            toast.current?.show({ severity: 'error', summary: 'Error', detail: (err as any).response?.data?.message || (err as any).message, life: 3000 });
+        } finally {
+            setDeletingId(null);
+        }
     };
 
     const actionTemplate = (row: Semester) => (
         <div className="flex gap-1">
             <Button icon="pi pi-pencil" className="p-button-text p-button-sm" onClick={() => openEdit(row)} />
-            <Button icon="pi pi-trash" className="p-button-text p-button-danger p-button-sm" onClick={() => confirmDelete(row)} />
+            <Button icon="pi pi-trash" className="p-button-text p-button-danger p-button-sm" onClick={() => confirmDelete(row)} loading={deletingId === row.id} />
         </div>
     );
 
@@ -127,6 +159,7 @@ const SemestersPage = () => {
     return (
         <div className="grid">
             <Toast ref={toast} />
+            <ConfirmDialog />
             <div className="col-12">
                 <PageHeader title="Semesters" subtitle="Manage semesters within academic years" actionLabel="New Semester" onAction={openNew} />
                 <div className="surface-card shadow-1 border-round p-3">

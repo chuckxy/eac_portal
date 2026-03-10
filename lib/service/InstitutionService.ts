@@ -1,5 +1,6 @@
 import { api, handleResponse, SPResponse } from './apiClient';
 import { Faculty, Department, Programme, Level } from '@/types';
+import { DependencyInfo } from './AcademicService';
 
 export const InstitutionService = {
     // ─── Faculties ───────────────────────────────────
@@ -14,6 +15,14 @@ export const InstitutionService = {
 
     deleteFaculty(id: number) {
         return handleResponse<SPResponse>(api.delete(`/institution/faculties/${id}`));
+    },
+
+    getFacultyDependencies(id: number) {
+        return handleResponse<DependencyInfo>(api.get(`/institution/faculties/${id}/dependencies`));
+    },
+
+    cascadeDeleteFaculty(id: number) {
+        return handleResponse<SPResponse>(api.delete(`/institution/faculties/${id}/cascade`));
     },
 
     // ─── Departments ─────────────────────────────────
@@ -31,6 +40,14 @@ export const InstitutionService = {
         return handleResponse<SPResponse>(api.delete(`/institution/departments/${id}`));
     },
 
+    getDepartmentDependencies(id: number) {
+        return handleResponse<DependencyInfo>(api.get(`/institution/departments/${id}/dependencies`));
+    },
+
+    cascadeDeleteDepartment(id: number) {
+        return handleResponse<SPResponse>(api.delete(`/institution/departments/${id}/cascade`));
+    },
+
     // ─── Programmes ──────────────────────────────────
 
     getProgrammes(departmentId?: number) {
@@ -44,6 +61,14 @@ export const InstitutionService = {
 
     deleteProgramme(id: number) {
         return handleResponse<SPResponse>(api.delete(`/institution/programmes/${id}`));
+    },
+
+    getProgrammeDependencies(id: number) {
+        return handleResponse<DependencyInfo>(api.get(`/institution/programmes/${id}/dependencies`));
+    },
+
+    cascadeDeleteProgramme(id: number) {
+        return handleResponse<SPResponse>(api.delete(`/institution/programmes/${id}/cascade`));
     },
 
     // ─── Levels (read-only) ──────────────────────────

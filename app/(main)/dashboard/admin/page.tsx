@@ -98,7 +98,7 @@ const AdminDashboard = () => {
                     <DataTable value={recentStudents} responsiveLayout="scroll" rows={5} className="p-datatable-sm" tableStyle={{ minWidth: '26rem' }}>
                         <Column field="studentIndex" header="Index No." style={{ minWidth: '8rem' }} />
                         <Column header="Full Name" body={(row) => `${row.firstName} ${row.lastName}`} style={{ minWidth: '9rem' }} />
-                        <Column field="programmeName" header="Programme" className="hidden md:table-cell" style={{ minWidth: '8rem' }} />
+                        <Column field="programmeName" header="Programme" style={{ minWidth: '8rem' }} />
                         <Column field="levelName" header="Level" body={(row) => <Tag value={row.levelName} severity="info" />} style={{ width: '90px' }} />
                     </DataTable>
                 </div>

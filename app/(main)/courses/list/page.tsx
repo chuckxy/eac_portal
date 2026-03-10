@@ -11,7 +11,7 @@ import { InputTextarea } from 'primereact/inputtextarea';
 import { InputSwitch } from 'primereact/inputswitch';
 import { Toast } from 'primereact/toast';
 import { Tag } from 'primereact/tag';
-import { confirmDialog } from 'primereact/confirmdialog';
+import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import PageHeader from '@/components/PageHeader';
 import StatusChip from '@/components/StatusChip';
 import BulkUploadDialog from '@/components/BulkUploadDialog';
@@ -29,6 +29,7 @@ const CoursesPage = () => {
     const [globalFilter, setGlobalFilter] = useState('');
     const [courses, setCourses] = useState<Course[]>([]);
     const [loading, setLoading] = useState(true);
+    const [deletingId, setDeletingId] = useState<number | null>(null);
 
     const [formData, setFormData] = useState({
         courseCode: '',
@@ -95,22 +96,53 @@ const CoursesPage = () => {
         }
     };
 
-    const confirmDelete = (c: Course) => {
-        confirmDialog({
-            message: `Delete "${c.courseCode} — ${c.courseName}"?`,
-            header: 'Confirm Delete',
-            icon: 'pi pi-exclamation-triangle',
-            acceptClassName: 'p-button-danger',
-            accept: async () => {
-                try {
-                    const res = await CoursesService.deleteCourse(c.id);
-                    toast.current?.show({ severity: 'success', summary: 'Deleted', detail: res.message || 'Course deleted.', life: 3000 });
-                    await loadData();
-                } catch (err) {
-                    toast.current?.show({ severity: 'error', summary: 'Error', detail: (err as any).response?.data?.message || (err as any).message, life: 3000 });
-                }
+    const confirmDelete = async (c: Course) => {
+        setDeletingId(c.id);
+        try {
+            const deps = await CoursesService.getCourseDependencies(c.id);
+            if (deps.hasDependencies) {
+                const lines = Object.entries(deps.counts)
+                    .filter(([, v]) => v > 0)
+                    .map(([k, v]) => `${v} ${k}`);
+                confirmDialog({
+                    message: `"${c.courseCode} — ${c.courseName}" has the following dependent records:\n\n• ${lines.join('\n• ')}\n\nDeleting will permanently remove ALL related records. Continue?`,
+                    header: 'Warning: Cascade Delete',
+                    icon: 'pi pi-exclamation-triangle',
+                    acceptClassName: 'p-button-danger',
+                    acceptLabel: 'Delete All',
+                    rejectLabel: 'Cancel',
+                    accept: async () => {
+                        try {
+                            const res = await CoursesService.cascadeDeleteCourse(c.id);
+                            toast.current?.show({ severity: 'warn', summary: 'Deleted', detail: res.message || 'Course and all dependents removed.', life: 4000 });
+                            await loadData();
+                        } catch (err) {
+                            toast.current?.show({ severity: 'error', summary: 'Error', detail: (err as any).response?.data?.message || (err as any).message, life: 3000 });
+                        }
+                    }
+                });
+            } else {
+                confirmDialog({
+                    message: `Delete "${c.courseCode} — ${c.courseName}"? This cannot be undone.`,
+                    header: 'Confirm Delete',
+                    icon: 'pi pi-exclamation-triangle',
+                    acceptClassName: 'p-button-danger',
+                    accept: async () => {
+                        try {
+                            const res = await CoursesService.deleteCourse(c.id);
+                            toast.current?.show({ severity: 'success', summary: 'Deleted', detail: res.message || 'Course deleted.', life: 3000 });
+                            await loadData();
+                        } catch (err) {
+                            toast.current?.show({ severity: 'error', summary: 'Error', detail: (err as any).response?.data?.message || (err as any).message, life: 3000 });
+                        }
+                    }
+                });
             }
-        });
+        } catch (err) {
+            toast.current?.show({ severity: 'error', summary: 'Error', detail: (err as any).response?.data?.message || (err as any).message, life: 3000 });
+        } finally {
+            setDeletingId(null);
+        }
     };
 
     const actionTemplate = (row: Course) => {
@@ -118,7 +150,7 @@ const CoursesPage = () => {
         return (
             <div className="flex gap-1">
                 <Button icon="pi pi-pencil" className="p-button-text p-button-sm" onClick={() => openEdit(row)} />
-                <Button icon="pi pi-trash" className="p-button-text p-button-danger p-button-sm" onClick={() => confirmDelete(row)} />
+                <Button icon="pi pi-trash" className="p-button-text p-button-danger p-button-sm" onClick={() => confirmDelete(row)} loading={deletingId === row.id} />
             </div>
         );
     };
@@ -138,6 +170,8 @@ const CoursesPage = () => {
     );
 
     return (
+        <>
+        <ConfirmDialog />
         <div className="grid">
             <Toast ref={toast} />
             <div className="col-12">
@@ -225,6 +259,7 @@ const CoursesPage = () => {
                 />
             )}
         </div>
+        </>
     );
 };
 

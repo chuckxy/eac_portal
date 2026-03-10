@@ -10,7 +10,7 @@ import { Dropdown } from 'primereact/dropdown';
 import { Calendar } from 'primereact/calendar';
 import { Toast } from 'primereact/toast';
 import { Tag } from 'primereact/tag';
-import { confirmDialog } from 'primereact/confirmdialog';
+import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import PageHeader from '@/components/PageHeader';
 import { AssessmentsService } from '@/lib/service/AssessmentsService';
 import { CoursesService } from '@/lib/service/CoursesService';
@@ -28,6 +28,7 @@ const AssessmentsListPage = () => {
     const [editing, setEditing] = useState<Assessment | null>(null);
     const [globalFilter, setGlobalFilter] = useState('');
     const [loading, setLoading] = useState(true);
+    const [deletingId, setDeletingId] = useState<number | null>(null);
     const [assessments, setAssessments] = useState<Assessment[]>([]);
     const [typeOptions, setTypeOptions] = useState<DropdownOption[]>([]);
     const [courseOptions, setCourseOptions] = useState<DropdownOption[]>([]);
@@ -94,22 +95,53 @@ const AssessmentsListPage = () => {
         }
     };
 
-    const confirmDelete = (a: Assessment) => {
-        confirmDialog({
-            message: `Delete "${a.title}" for ${a.courseCode}?`,
-            header: 'Confirm Delete',
-            icon: 'pi pi-exclamation-triangle',
-            acceptClassName: 'p-button-danger',
-            accept: async () => {
-                try {
-                    const res = await AssessmentsService.deleteAssessment(a.id);
-                    toast.current?.show({ severity: 'success', summary: 'Deleted', detail: res.message, life: 3000 });
-                    loadData();
-                } catch (err: any) {
-                    toast.current?.show({ severity: 'error', summary: 'Error', detail: err.message || 'Failed to delete', life: 4000 });
-                }
+    const confirmDelete = async (a: Assessment) => {
+        setDeletingId(a.id);
+        try {
+            const deps = await AssessmentsService.getAssessmentDependencies(a.id);
+            if (deps.hasDependencies) {
+                const lines = Object.entries(deps.counts)
+                    .filter(([, v]) => v > 0)
+                    .map(([k, v]) => `${v} ${k}`);
+                confirmDialog({
+                    message: `"${a.title}" for ${a.courseCode} has the following dependent records:\n\n• ${lines.join('\n• ')}\n\nDeleting will permanently remove ALL related records. Continue?`,
+                    header: 'Warning: Cascade Delete',
+                    icon: 'pi pi-exclamation-triangle',
+                    acceptClassName: 'p-button-danger',
+                    acceptLabel: 'Delete All',
+                    rejectLabel: 'Cancel',
+                    accept: async () => {
+                        try {
+                            const res = await AssessmentsService.cascadeDeleteAssessment(a.id);
+                            toast.current?.show({ severity: 'warn', summary: 'Deleted', detail: res.message || 'Assessment and all scores removed.', life: 4000 });
+                            loadData();
+                        } catch (err: any) {
+                            toast.current?.show({ severity: 'error', summary: 'Error', detail: err.message || 'Failed to delete', life: 4000 });
+                        }
+                    }
+                });
+            } else {
+                confirmDialog({
+                    message: `Delete "${a.title}" for ${a.courseCode}? This cannot be undone.`,
+                    header: 'Confirm Delete',
+                    icon: 'pi pi-exclamation-triangle',
+                    acceptClassName: 'p-button-danger',
+                    accept: async () => {
+                        try {
+                            const res = await AssessmentsService.deleteAssessment(a.id);
+                            toast.current?.show({ severity: 'success', summary: 'Deleted', detail: res.message, life: 3000 });
+                            loadData();
+                        } catch (err: any) {
+                            toast.current?.show({ severity: 'error', summary: 'Error', detail: err.message || 'Failed to delete', life: 4000 });
+                        }
+                    }
+                });
             }
-        });
+        } catch (err: any) {
+            toast.current?.show({ severity: 'error', summary: 'Error', detail: err.message || 'Failed to check dependencies', life: 3000 });
+        } finally {
+            setDeletingId(null);
+        }
     };
 
     const actionTemplate = (row: Assessment) => (
@@ -122,7 +154,7 @@ const AssessmentsListPage = () => {
                 tooltipOptions={{ position: 'top' }}
                 onClick={() => toast.current?.show({ severity: 'info', summary: 'Navigate to score entry', life: 2000 })}
             />
-            {isAdmin && <Button icon="pi pi-trash" className="p-button-text p-button-danger p-button-sm" onClick={() => confirmDelete(row)} />}
+            {isAdmin && <Button icon="pi pi-trash" className="p-button-text p-button-danger p-button-sm" onClick={() => confirmDelete(row)} loading={deletingId === row.id} />}
         </div>
     );
 
@@ -146,6 +178,8 @@ const AssessmentsListPage = () => {
     );
 
     return (
+        <>
+        <ConfirmDialog />
         <div className="grid">
             <Toast ref={toast} />
             <div className="col-12">
@@ -212,6 +246,7 @@ const AssessmentsListPage = () => {
                 </Dialog>
             )}
         </div>
+        </>
     );
 };
 

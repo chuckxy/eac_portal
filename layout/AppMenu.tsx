@@ -69,6 +69,12 @@ const AppMenu = () => {
                         { label: 'View Scores', icon: 'pi pi-fw pi-eye', to: '/results/scores' },
                         { label: 'Grading Scale', icon: 'pi pi-fw pi-percentage', to: '/grading' }
                     ]
+                },
+                { separator: true },
+                {
+                    label: 'SMS',
+                    icon: 'pi pi-envelope',
+                    items: [{ label: 'Bulk SMS', icon: 'pi pi-fw pi-send', to: '/sms' }]
                 }
             ];
         }

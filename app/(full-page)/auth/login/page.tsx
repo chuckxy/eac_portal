@@ -83,7 +83,14 @@ const Login: Page = () => {
                             />
                         </div>
 
-                        <Button type="submit" label={submitting ? 'Signing in...' : 'Sign In'} icon={submitting ? 'pi pi-spin pi-spinner' : 'pi pi-sign-in'} className="w-full mb-4" disabled={submitting || authLoading} />
+                        <Button type="submit" label={submitting ? 'Signing in...' : 'Sign In'} icon={submitting ? 'pi pi-spin pi-spinner' : 'pi pi-sign-in'} className="w-full mb-3" disabled={submitting || authLoading} />
+
+                        {/* Forgot Password Link */}
+                        <div className="text-right mb-3">
+                            <a className="text-primary text-sm cursor-pointer font-medium no-underline hover:underline" onClick={() => router.push('/auth/forgot-password')}>
+                                Forgot Password?
+                            </a>
+                        </div>
                     </form>
 
                     {/* Divider */}
