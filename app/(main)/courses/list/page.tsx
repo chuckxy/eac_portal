@@ -37,12 +37,14 @@ const CoursesPage = () => {
         creditHours: 3,
         departmentId: null as number | null,
         levelId: null as number | null,
+        semesterId: null as number | null,
         description: '',
         isActive: true
     });
 
     const [departmentOptions, setDepartmentOptions] = useState<{ label: string; value: number }[]>([]);
     const [levelOptions, setLevelOptions] = useState<{ label: string; value: number }[]>([]);
+    const [semesterRefOptions, setSemesterRefOptions] = useState<{ label: string; value: number }[]>([]);
     const [showBulkUpload, setShowBulkUpload] = useState(false);
 
     const loadData = async () => {
@@ -59,9 +61,10 @@ const CoursesPage = () => {
 
     const loadDropdowns = async () => {
         try {
-            const [departments, levels] = await Promise.all([LookupService.getDepartments(), LookupService.getLevels()]);
+            const [departments, levels, semRefs] = await Promise.all([LookupService.getDepartments(), LookupService.getLevels(), LookupService.getSemesterRefs()]);
             setDepartmentOptions(departments.map((d) => ({ label: d.departmentName, value: d.id })));
             setLevelOptions(levels.map((l) => ({ label: l.levelName, value: l.id })));
+            setSemesterRefOptions(semRefs.map((s) => ({ label: s.semesterName, value: s.id })));
         } catch (err) {
             toast.current?.show({ severity: 'error', summary: 'Error', detail: 'Failed to load dropdown options.', life: 3000 });
         }
@@ -74,13 +77,13 @@ const CoursesPage = () => {
 
     const openNew = () => {
         setEditing(null);
-        setFormData({ courseCode: '', courseName: '', creditHours: 3, departmentId: null, levelId: null, description: '', isActive: true });
+        setFormData({ courseCode: '', courseName: '', creditHours: 3, departmentId: null, levelId: null, semesterId: null, description: '', isActive: true });
         setShowDialog(true);
     };
 
     const openEdit = (c: Course) => {
         setEditing(c);
-        setFormData({ courseCode: c.courseCode, courseName: c.courseName, creditHours: c.creditHours, departmentId: c.departmentId, levelId: c.levelId, description: c.description || '', isActive: c.isActive === 1 });
+        setFormData({ courseCode: c.courseCode, courseName: c.courseName, creditHours: c.creditHours, departmentId: c.departmentId, levelId: c.levelId, semesterId: c.semesterId, description: c.description || '', isActive: c.isActive === 1 });
         setShowDialog(true);
     };
 
@@ -183,6 +186,7 @@ const CoursesPage = () => {
                         <Column field="creditHours" header="Credits" sortable style={{ width: '75px' }} className="text-center" body={(row) => <Tag value={row.creditHours} severity="info" />} />
                         <Column field="departmentName" header="Department" sortable style={{ minWidth: '8rem' }} />
                         <Column field="levelName" header="Level" sortable style={{ width: '100px' }} />
+                        <Column field="semesterName" header="Semester" sortable style={{ width: '110px' }} className="hidden md:table-cell" />
                         <Column header="Status" body={(row) => <StatusChip active={row.isActive} />} style={{ width: '80px' }} />
                         {isAdmin && <Column header="Actions" body={actionTemplate} style={{ width: '90px' }} className="white-space-nowrap" />}
                     </DataTable>
@@ -216,6 +220,12 @@ const CoursesPage = () => {
                                 <Dropdown value={formData.levelId} options={levelOptions} onChange={(e) => setFormData({ ...formData, levelId: e.value })} placeholder="Select" />
                             </div>
                         </div>
+                        <div className="grid">
+                            <div className="col-12 sm:col-4 flex flex-column gap-1">
+                                <label className="text-sm font-medium">Semester</label>
+                                <Dropdown value={formData.semesterId} options={semesterRefOptions} onChange={(e) => setFormData({ ...formData, semesterId: e.value })} placeholder="Select" showClear />
+                            </div>
+                        </div>
                         <div className="flex flex-column gap-1">
                             <label className="text-sm font-medium">Description</label>
                             <InputTextarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} rows={3} autoResize />
@@ -245,14 +255,16 @@ const CoursesPage = () => {
                     ]}
                     dropdowns={[
                         { key: 'departmentId', label: 'Department', placeholder: 'Select department', options: departmentOptions, filter: true },
-                        { key: 'levelId', label: 'Level', placeholder: 'Select level', options: levelOptions }
+                        { key: 'levelId', label: 'Level', placeholder: 'Select level', options: levelOptions },
+                        { key: 'semesterId', label: 'Semester', placeholder: 'Select semester', options: semesterRefOptions }
                     ]}
                     templateFileName="courses_upload_template.csv"
                     onUpload={async (records, dropdownValues) => {
                         return await CoursesService.bulkUploadCourses({
                             courses: records,
                             departmentId: dropdownValues.departmentId,
-                            levelId: dropdownValues.levelId
+                            levelId: dropdownValues.levelId,
+                            semesterId: dropdownValues.semesterId
                         });
                     }}
                     onComplete={loadData}

@@ -1,5 +1,5 @@
 import { api, handleResponse, SPResponse } from './apiClient';
-import { AcademicYear, Semester } from '@/types';
+import { AcademicYear, Semester, SemesterRef } from '@/types';
 
 export interface DependencyInfo {
     hasDependencies: boolean;
@@ -7,6 +7,20 @@ export interface DependencyInfo {
 }
 
 export const AcademicService = {
+    // ─── Semesters Reference (lookup table) ────────
+
+    getSemesterRefs() {
+        return handleResponse<SemesterRef[]>(api.get('/academic/semesters-ref'));
+    },
+
+    saveSemesterRef(data: Partial<SemesterRef>) {
+        return handleResponse<SPResponse>(api.post('/academic/semesters-ref', data));
+    },
+
+    deleteSemesterRef(id: number) {
+        return handleResponse<SPResponse>(api.delete(`/academic/semesters-ref/${id}`));
+    },
+
     // ─── Academic Years ──────────────────────────────
 
     getYears() {

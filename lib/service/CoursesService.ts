@@ -22,7 +22,7 @@ export const CoursesService = {
         return handleResponse<SPResponse>(api.post('/courses/list', data));
     },
 
-    bulkUploadCourses(data: { courses: Record<string, any>[]; departmentId: number; levelId: number }) {
+    bulkUploadCourses(data: { courses: Record<string, any>[]; departmentId: number; levelId: number; semesterId?: number }) {
         return handleResponse<BulkCourseUploadResult>(api.post('/courses/list/bulk', data));
     },
 

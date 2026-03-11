@@ -81,7 +81,7 @@ const ProgrammesPage = () => {
 
     const openEdit = (p: Programme) => {
         setEditing(p);
-        setFormData({ facultyId: null, departmentId: p.departmentId, programmeName: p.programmeName, programmeCode: p.programmeCode, duration: p.duration, isActive: p.isActive });
+        setFormData({ facultyId: null, departmentId: p.departmentId, programmeName: p.programmeName, programmeCode: p.programmeCode, duration: p.duration, isActive: p.isActive === 1 });
         loadDepartments();
         setShowDialog(true);
     };
@@ -90,7 +90,7 @@ const ProgrammesPage = () => {
         try {
             const { facultyId, ...rest } = formData;
             const payload = editing ? { id: editing.id, ...rest } : rest;
-            const res = await InstitutionService.saveProgramme(payload);
+            const res = await InstitutionService.saveProgramme({ ...payload,isActive:payload.isActive?1:0 });
             toast.current?.show({ severity: 'success', summary: 'Saved', detail: res.message || 'Programme saved.', life: 3000 });
             setShowDialog(false);
             await loadData();

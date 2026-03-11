@@ -13,7 +13,7 @@ import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import PageHeader from '@/components/PageHeader';
 import StatusChip from '@/components/StatusChip';
 import { AcademicService } from '@/lib/service/AcademicService';
-import type { Semester } from '@/types';
+import type { Semester, SemesterRef } from '@/types';
 import { formatDateToString } from '@/lib/service/UtilityService';
 
 const SemestersPage = () => {
@@ -26,13 +26,15 @@ const SemestersPage = () => {
     const [academicYearOptions, setAcademicYearOptions] = useState<{ label: string; value: number }[]>([]);
     const [filterYearId, setFilterYearId] = useState<number | null>(null);
     const [deletingId, setDeletingId] = useState<number | null>(null);
+    const [semesterRefOptions, setSemesterRefOptions] = useState<{ label: string; value: number }[]>([]);
 
-    const [formData, setFormData] = useState({ academicYearId: null as number | null, semesterName: '', startDate: null as Date | null, endDate: null as Date | null, isCurrent: false });
+    const [formData, setFormData] = useState({ academicYearId: null as number | null, semesterId: null as number | null, startDate: null as Date | null, endDate: null as Date | null, isCurrent: false });
 
     const loadYears = async () => {
         try {
-            const years = await AcademicService.getYears();
+            const [years, semRefs] = await Promise.all([AcademicService.getYears(), AcademicService.getSemesterRefs()]);
             setAcademicYearOptions(years.map((y) => ({ label: y.yearName, value: y.id })));
+            setSemesterRefOptions(semRefs.map((s) => ({ label: s.semesterName, value: s.id })));
         } catch (err) {
             toast.current?.show({ severity: 'error', summary: 'Error', detail: (err as any).response?.data?.message || (err as any).message, life: 3000 });
         }
@@ -61,13 +63,14 @@ const SemestersPage = () => {
 
     const openNew = () => {
         setEditingSemester(null);
-        setFormData({ academicYearId: null, semesterName: '', startDate: null, endDate: null, isCurrent: false });
+        setFormData({ academicYearId: null, semesterId: null, startDate: null, endDate: null, isCurrent: false });
         setShowDialog(true);
     };
 
     const openEdit = (sem: Semester) => {
+        console.log(sem.endDate);
         setEditingSemester(sem);
-        setFormData({ academicYearId: sem.academicYearId, semesterName: sem.semesterName, startDate: new Date(sem.startDate), endDate: new Date(sem.endDate), isCurrent: sem.isCurrent });
+        setFormData({ academicYearId: sem.academicYearId, semesterId: sem.semesterId, startDate: new Date(sem.startDate), endDate: new Date(sem.endDate), isCurrent: sem.isCurrent });
         setShowDialog(true);
     };
 
@@ -75,14 +78,15 @@ const SemestersPage = () => {
         try {
             const payload: any = {
                 academicYearId: formData.academicYearId,
-                semesterName: formData.semesterName,
+                semesterId: formData.semesterId,
                 startDate: formData.startDate?.toISOString().split('T')[0],
                 endDate: formData.endDate?.toISOString().split('T')[0],
-                isCurrent: formData.isCurrent
+                isCurrent: formData.isCurrent?1:0
             };
             if (editingSemester) payload.id = editingSemester.id;
             const res = await AcademicService.saveSemester(payload);
-            toast.current?.show({ severity: 'success', summary: 'Saved', detail: res.message || `Semester ${formData.semesterName} saved.`, life: 3000 });
+            const semName = semesterRefOptions.find(o => o.value === formData.semesterId)?.label || 'Semester';
+            toast.current?.show({ severity: 'success', summary: 'Saved', detail: res.message || `${semName} saved.`, life: 3000 });
             setShowDialog(false);
             await loadSemesters(filterYearId);
         } catch (err) {
@@ -192,8 +196,8 @@ const SemestersPage = () => {
                         <Dropdown value={formData.academicYearId} options={academicYearOptions} onChange={(e) => setFormData({ ...formData, academicYearId: e.value })} placeholder="Select year" />
                     </div>
                     <div className="flex flex-column gap-1">
-                        <label className="text-sm font-medium">Semester Name</label>
-                        <InputText value={formData.semesterName} onChange={(e) => setFormData({ ...formData, semesterName: e.target.value })} placeholder="e.g. Semester 1" />
+                        <label className="text-sm font-medium">Semester</label>
+                        <Dropdown value={formData.semesterId} options={semesterRefOptions} onChange={(e) => setFormData({ ...formData, semesterId: e.value })} placeholder="Select semester" />
                     </div>
                     <div className="flex flex-column gap-1">
                         <label className="text-sm font-medium">Start Date</label>

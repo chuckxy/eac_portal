@@ -1,5 +1,5 @@
 import { api, handleResponse } from './apiClient';
-import type { Semester, Department, Programme, Level, Lecturer, Course } from '@/types';
+import type { Semester, SemesterRef, Department, Programme, Level, Lecturer, Course } from '@/types';
 
 /**
  * LookupService — read-only reference data endpoints.
@@ -9,6 +9,10 @@ import type { Semester, Department, Programme, Level, Lecturer, Course } from '@
 export const LookupService = {
     getSemesters(yearId?: number) {
         return handleResponse<Semester[]>(api.get('/lookup/semesters', { params: yearId ? { yearId } : undefined }));
+    },
+
+    getSemesterRefs() {
+        return handleResponse<SemesterRef[]>(api.get('/lookup/semesters-ref'));
     },
 
     getDepartments(facultyId?: number) {

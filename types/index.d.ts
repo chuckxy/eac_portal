@@ -28,6 +28,7 @@ import type { Demo, LayoutType, SortOrderType, CustomEvent, ChartDataState, Char
 export type {
     AcademicYear,
     Semester,
+    SemesterRef,
     Faculty,
     Department,
     Programme,

@@ -16,6 +16,7 @@ export interface AcademicYear {
 
 export interface Semester {
     id: number;
+    semesterId:number;
     academicYearId: number;
     semesterName: string;
     startDate: string;
@@ -51,7 +52,7 @@ export interface Programme {
     programmeName: string;
     programmeCode: string;
     duration: number;
-    isActive: boolean;
+    isActive: boolean | number;
     createdAt: string;
     /** Joined from departments_list */
     departmentName: string;
@@ -128,6 +129,7 @@ export interface Course {
     creditHours: number;
     departmentId: number;
     levelId: number;
+    semesterId: number;
     description: string;
     isActive: boolean | number;
     createdAt: string;
@@ -135,6 +137,8 @@ export interface Course {
     departmentName: string;
     /** Joined from programmes_levels */
     levelName: string;
+    /** Joined from semesters */
+    semesterName: string;
 }
 
 export interface CourseAssignment {

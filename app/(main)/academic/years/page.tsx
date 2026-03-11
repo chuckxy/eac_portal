@@ -26,7 +26,6 @@ const AcademicYearsPage = () => {
 
     const [formData, setFormData] = useState({ yearName: '', startDate: null as Date | null, endDate: null as Date | null, isCurrent: false });
 
-    //TODO: Move to service
     const loadYears = async () => {
         try {
             setLoading(true);
@@ -61,7 +60,7 @@ const AcademicYearsPage = () => {
                 yearName: formData.yearName,
                 startDate: formData.startDate?.toISOString().split('T')[0],
                 endDate: formData.endDate?.toISOString().split('T')[0],
-                isCurrent: formData.isCurrent
+                isCurrent: formData.isCurrent?1:0
             };
             if (editingYear) payload.id = editingYear.id;
             const res = await AcademicService.saveYear(payload);
@@ -137,7 +136,7 @@ const AcademicYearsPage = () => {
             </span>
         </div>
     );
-    console.log(years);
+
     return (
         <div className="grid">
             <Toast ref={toast} />
