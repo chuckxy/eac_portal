@@ -127,6 +127,7 @@ const StudentsPage = () => {
     };
 
     const confirmToggleStatus = (s: Student) => {
+        console.log(s)
         const action = s.isActive ? 'Deactivate' : 'Activate';
         confirmDialog({
             message: `${action} student "${s.firstName} ${s.lastName}" (${s.studentIndex})?`,
@@ -135,7 +136,7 @@ const StudentsPage = () => {
             acceptClassName: s.isActive ? 'p-button-danger' : 'p-button-success',
             accept: async () => {
                 try {
-                    await UsersService.toggleStudentStatus(s.studentIndex, !s.isActive);
+                    await UsersService.toggleStudentStatus(s.userId, !s.isActive);
                     toast.current?.show({ severity: 'info', summary: `${action}d`, detail: `Student ${action.toLowerCase()}d successfully.`, life: 3000 });
                     loadStudents();
                 } catch (err) {

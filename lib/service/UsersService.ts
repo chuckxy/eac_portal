@@ -28,8 +28,8 @@ export const UsersService = {
         return handleResponse<BulkUploadResult>(api.post('/users/students/bulk', data));
     },
 
-    toggleStudentStatus(studentIndex: string, isActive: boolean) {
-        return handleResponse<SPResponse>(api.patch(`/users/students/${encodeURIComponent(studentIndex)}/status`, { isActive }));
+    toggleStudentStatus(studentUserId: number, isActive: boolean) {
+        return handleResponse<SPResponse>(api.patch(`/users/students/${studentUserId}/status`, { isActive }));
     },
 
     // ─── Lecturers ───────────────────────────────────
