@@ -186,7 +186,7 @@ const CoursesPage = () => {
                         <Column field="creditHours" header="Credits" sortable style={{ width: '75px' }} className="text-center" body={(row) => <Tag value={row.creditHours} severity="info" />} />
                         <Column field="departmentName" header="Department" sortable style={{ minWidth: '8rem' }} />
                         <Column field="levelName" header="Level" sortable style={{ width: '100px' }} />
-                        <Column field="semesterName" header="Semester" sortable style={{ width: '110px' }} className="hidden md:table-cell" />
+                        <Column field="semesterName" header="Semester" sortable style={{ width: '110px' }} />
                         <Column header="Status" body={(row) => <StatusChip active={row.isActive} />} style={{ width: '80px' }} />
                         {isAdmin && <Column header="Actions" body={actionTemplate} style={{ width: '90px' }} className="white-space-nowrap" />}
                     </DataTable>

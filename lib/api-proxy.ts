@@ -11,7 +11,7 @@ const EXPRESS_BASE = process.env.NODE_ENV === 'production' ? process.env.EXPRESS
  * This builds the target URL:  http://localhost:5001/api/{basePath}/{...path}?query
  */
 export async function proxyToExpress(req: NextRequest, pathSegments: string[], basePath: string) {
-    const subPath = pathSegments.join('/');
+    const subPath = pathSegments.map((s) => encodeURIComponent(s)).join('/');
     const targetUrl = new URL(`/api/${basePath}/${subPath}`, EXPRESS_BASE);
 
     // Forward query parameters

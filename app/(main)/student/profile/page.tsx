@@ -204,6 +204,10 @@ const StudentProfilePage = () => {
                             <label className="text-sm font-medium text-color-secondary">Enrollment Date</label>
                             <span className="font-medium">{profile.enrollmentDate ? new Date(profile.enrollmentDate).toLocaleDateString() : '—'}</span>
                         </div>
+                        <div className="col-12 sm:col-6 flex flex-column gap-1 mb-3">
+                            <label className="text-sm font-medium text-color-secondary">Academic Year</label>
+                            <span className="font-medium">{profile.academicYearName || '—'}</span>
+                        </div>
                     </div>
                 </div>
             </div>

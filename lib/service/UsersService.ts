@@ -24,7 +24,7 @@ export const UsersService = {
         return handleResponse<SPResponse>(api.post('/users/students', data));
     },
 
-    bulkUploadStudents(data: { students: Record<string, any>[]; programmeId: number; levelId: number }) {
+    bulkUploadStudents(data: { students: Record<string, any>[]; programmeId: number; levelId: number; academicYearId: number }) {
         return handleResponse<BulkUploadResult>(api.post('/users/students/bulk', data));
     },
 

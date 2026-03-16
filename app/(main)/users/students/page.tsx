@@ -15,6 +15,7 @@ import StatusChip from '@/components/StatusChip';
 import BulkUploadDialog from '@/components/BulkUploadDialog';
 import { UsersService } from '@/lib/service/UsersService';
 import { InstitutionService } from '@/lib/service/InstitutionService';
+import { AcademicService } from '@/lib/service/AcademicService';
 import type { Student } from '@/types';
 
 const StudentsPage = () => {
@@ -28,6 +29,7 @@ const StudentsPage = () => {
 
     const [programmeOptions, setProgrammeOptions] = useState<{ label: string; value: number }[]>([]);
     const [levelOptions, setLevelOptions] = useState<{ label: string; value: number }[]>([]);
+    const [academicYearOptions, setAcademicYearOptions] = useState<{ label: string; value: number }[]>([]);
     const [showBulkUpload, setShowBulkUpload] = useState(false);
 
     const [formData, setFormData] = useState({
@@ -41,7 +43,8 @@ const StudentsPage = () => {
         dateOfBirth: null as Date | null,
         programmeId: null as number | null,
         levelId: null as number | null,
-        enrollmentDate: null as Date | null
+        enrollmentDate: null as Date | null,
+        academicYearId: null as number | null
     });
 
     const genderOptions = [
@@ -63,9 +66,10 @@ const StudentsPage = () => {
 
     const loadDropdowns = useCallback(async () => {
         try {
-            const [programmes, levels] = await Promise.all([InstitutionService.getProgrammes(), InstitutionService.getLevels()]);
+            const [programmes, levels, academicYears] = await Promise.all([InstitutionService.getProgrammes(), InstitutionService.getLevels(), AcademicService.getYears()]);
             setProgrammeOptions(programmes.map((p) => ({ label: p.programmeName, value: p.id })));
             setLevelOptions(levels.map((l) => ({ label: l.levelName, value: l.id })));
+            setAcademicYearOptions(academicYears.map((y) => ({ label: y.yearName, value: y.id })));
         } catch (err) {
             toast.current?.show({ severity: 'error', summary: 'Error', detail: 'Failed to load dropdown data.', life: 4000 });
         }
@@ -78,7 +82,7 @@ const StudentsPage = () => {
 
     const openNew = () => {
         setEditing(null);
-        setFormData({ studentIndex: '', firstName: '', lastName: '', otherNames: '', email: '', phone: '', gender: null, dateOfBirth: null, programmeId: null, levelId: null, enrollmentDate: null });
+        setFormData({ studentIndex: '', firstName: '', lastName: '', otherNames: '', email: '', phone: '', gender: null, dateOfBirth: null, programmeId: null, levelId: null, enrollmentDate: null, academicYearId: null });
         setShowDialog(true);
     };
 
@@ -95,7 +99,8 @@ const StudentsPage = () => {
             dateOfBirth: s.dateOfBirth ? new Date(s.dateOfBirth) : null,
             programmeId: s.programmeId || null,
             levelId: s.levelId || null,
-            enrollmentDate: s.enrollmentDate ? new Date(s.enrollmentDate) : null
+            enrollmentDate: s.enrollmentDate ? new Date(s.enrollmentDate) : null,
+            academicYearId: s.academicYearId || null
         });
         setShowDialog(true);
     };
@@ -260,9 +265,15 @@ const StudentsPage = () => {
                             <Dropdown value={formData.levelId} options={levelOptions} onChange={(e) => setFormData({ ...formData, levelId: e.value })} placeholder="Select level" />
                         </div>
                     </div>
-                    <div className="flex flex-column gap-1">
-                        <label className="text-sm font-medium">Enrollment Date</label>
-                        <Calendar value={formData.enrollmentDate} onChange={(e) => setFormData({ ...formData, enrollmentDate: e.value as Date })} dateFormat="yy-mm-dd" showIcon />
+                    <div className="grid">
+                        <div className="col-12 sm:col-6 flex flex-column gap-1">
+                            <label className="text-sm font-medium">Enrollment Date</label>
+                            <Calendar value={formData.enrollmentDate} onChange={(e) => setFormData({ ...formData, enrollmentDate: e.value as Date })} dateFormat="yy-mm-dd" showIcon />
+                        </div>
+                        <div className="col-12 sm:col-6 flex flex-column gap-1">
+                            <label className="text-sm font-medium">Academic Year</label>
+                            <Dropdown value={formData.academicYearId} options={academicYearOptions} onChange={(e) => setFormData({ ...formData, academicYearId: e.value })} placeholder="Select academic year" />
+                        </div>
                     </div>
                     <div className="flex justify-content-end gap-2 pt-2">
                         <Button label="Cancel" className="p-button-text" onClick={() => setShowDialog(false)} />
@@ -283,19 +294,20 @@ const StudentsPage = () => {
                     { field: 'dateOfBirth', header: 'Date of Birth' },
                     { field: 'gender', header: 'Gender' },
                     { field: 'email', header: 'Email' },
-                    { field: 'phone', header: 'Phone' },
-                    { field: 'enrollmentDate', header: 'Enrollment Date' }
+                    { field: 'phone', header: 'Phone' }
                 ]}
                 dropdowns={[
                     { key: 'programmeId', label: 'Programme', placeholder: 'Select programme', options: programmeOptions, filter: true },
-                    { key: 'levelId', label: 'Level', placeholder: 'Select level', options: levelOptions }
+                    { key: 'levelId', label: 'Level', placeholder: 'Select level', options: levelOptions },
+                    { key: 'academicYearId', label: 'Academic Year', placeholder: 'Select academic year', options: academicYearOptions }
                 ]}
                 templateFileName="students_upload_template.csv"
                 onUpload={async (records, dropdownValues) => {
                     return await UsersService.bulkUploadStudents({
                         students: records,
                         programmeId: dropdownValues.programmeId,
-                        levelId: dropdownValues.levelId
+                        levelId: dropdownValues.levelId,
+                        academicYearId: dropdownValues.academicYearId
                     });
                 }}
                 onComplete={loadStudents}

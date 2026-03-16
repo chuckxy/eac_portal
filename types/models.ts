@@ -16,7 +16,7 @@ export interface AcademicYear {
 
 export interface Semester {
     id: number;
-    semesterId:number;
+    semesterId: number;
     academicYearId: number;
     semesterName: string;
     startDate: string;
@@ -84,6 +84,9 @@ export interface Student {
     programmeId: number;
     levelId: number;
     enrollmentDate: string;
+    academicYearId: number;
+    /** Joined from academic_years */
+    academicYearName: string;
     isActive: boolean;
     createdAt: string;
     /** Joined from programmes_list */
