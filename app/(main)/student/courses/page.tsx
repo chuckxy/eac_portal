@@ -37,11 +37,15 @@ const MyCoursesPage = () => {
         try {
             const data = await LookupService.getSemesters();
             const options = (data || []).map((s: any) => ({
-                label: s.semesterName ?? `Semester ${s.semesterNumber}, ${s.yearName ?? ''}`,
+                label: `${s.yearName ?? ''} — ${s.semesterName ?? `Semester ${s.semesterNumber}`}`.trim(),
                 value: s.id ?? s.semesterId
             }));
             setSemesterOptions(options);
-            if (options.length > 0) {
+            // Default to the current academic semester, or fall back to the first
+            const current = (data || []).find((s: any) => s.isCurrent);
+            if (current) {
+                setSelectedSemester(current.id ?? current.semesterId);
+            } else if (options.length > 0) {
                 setSelectedSemester(options[0].value);
             }
         } catch (err) {
@@ -132,8 +136,8 @@ const MyCoursesPage = () => {
                         <DataTable value={courses} responsiveLayout="scroll" className="p-datatable-sm" loading={loadingCourses} emptyMessage="No courses enrolled." tableStyle={{ minWidth: '26rem' }}>
                             <Column header="Course" body={courseTemplate} sortable sortField="courseCode" style={{ minWidth: '10rem' }} />
                             <Column field="creditHours" header="Cr" sortable style={{ width: '45px' }} className="text-center" />
-                            <Column field="lecturerName" header="Lecturer" sortable className="hidden md:table-cell" style={{ minWidth: '8rem' }} />
-                            <Column header="Progress" body={progressTemplate} style={{ width: '110px', minWidth: '110px' }} className="hidden sm:table-cell" />
+                            <Column field="lecturerName" header="Lecturer" sortable style={{ minWidth: '8rem' }} />
+                            <Column header="Progress" body={progressTemplate} style={{ width: '110px', minWidth: '110px' }} />
                             <Column header="Score" body={scoreTemplate} sortable sortField="completedAssessments" style={{ width: '80px' }} />
                         </DataTable>
                     </div>

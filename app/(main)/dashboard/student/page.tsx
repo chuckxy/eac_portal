@@ -99,7 +99,7 @@ const StudentDashboard = () => {
     console.log('Last Semester:', lastSemester);
     // Compute current GPA from transcript last semester
     const currentGpa = lastSemester?.gpa != null ? lastSemester.gpa.toFixed(2) : '—';
-    console.log(currentResults);
+
     return (
         <div className="grid">
             {/* Student Profile Card (mobile-first) */}
