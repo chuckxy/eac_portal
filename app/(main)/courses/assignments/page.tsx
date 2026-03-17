@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useRef, useEffect } from 'react';
-import { DataTable } from 'primereact/datatable';
+import { DataTable, DataTableFilterMeta } from 'primereact/datatable';
+import { FilterMatchMode } from 'primereact/api';
 import { Column } from 'primereact/column';
 import { Button } from 'primereact/button';
 import { Dialog } from 'primereact/dialog';
@@ -21,7 +22,8 @@ const CourseAssignmentsPage = () => {
     const isAdmin = hasRole('admin');
     const [showDialog, setShowDialog] = useState(false);
     const [editing, setEditing] = useState<CourseAssignment | null>(null);
-    const [globalFilter, setGlobalFilter] = useState('');
+    const [globalFilterValue, setGlobalFilterValue] = useState('');
+    const [filters, setFilters] = useState<DataTableFilterMeta>({ global: { value: null, matchMode: FilterMatchMode.CONTAINS } });
     const [assignments, setAssignments] = useState<CourseAssignment[]>([]);
     const [loading, setLoading] = useState(true);
     const [deletingId, setDeletingId] = useState<number | null>(null);
@@ -161,7 +163,15 @@ const CourseAssignmentsPage = () => {
         <div className="flex flex-column sm:flex-row gap-2 justify-content-between">
             <span className="p-input-icon-left w-full sm:w-auto">
                 <i className="pi pi-search" />
-                <InputText placeholder="Search assignments..." value={globalFilter} onChange={(e) => setGlobalFilter(e.target.value)} className="w-full sm:w-auto" />
+                <InputText
+                    placeholder="Search assignments..."
+                    value={globalFilterValue}
+                    onChange={(e) => {
+                        setGlobalFilterValue(e.target.value);
+                        setFilters((prev) => ({ ...prev, global: { value: e.target.value || null, matchMode: FilterMatchMode.CONTAINS } }));
+                    }}
+                    className="w-full sm:w-auto"
+                />
             </span>
         </div>
     );
@@ -178,18 +188,7 @@ const CourseAssignmentsPage = () => {
                     onAction={isAdmin ? openNew : undefined}
                 />
                 <div className="surface-card shadow-1 border-round p-3">
-                    <DataTable
-                        value={assignments}
-                        loading={loading}
-                        globalFilter={globalFilter}
-                        header={header}
-                        paginator
-                        rows={10}
-                        responsiveLayout="scroll"
-                        className="p-datatable-sm"
-                        emptyMessage="No assignments found."
-                        tableStyle={{ minWidth: '34rem' }}
-                    >
+                    <DataTable value={assignments} loading={loading} filters={filters} header={header} paginator rows={10} responsiveLayout="scroll" className="p-datatable-sm" emptyMessage="No assignments found." tableStyle={{ minWidth: '34rem' }}>
                         <Column header="Course" body={courseTemplate} sortable sortField="courseCode" style={{ minWidth: '10rem' }} />
                         <Column field="lecturerName" header="Lecturer" sortable style={{ minWidth: '9rem' }} />
                         <Column field="programmeName" header="Programme" sortable style={{ minWidth: '8rem' }} />

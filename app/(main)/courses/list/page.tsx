@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useRef, useEffect } from 'react';
-import { DataTable } from 'primereact/datatable';
+import { DataTable, DataTableFilterMeta } from 'primereact/datatable';
+import { FilterMatchMode } from 'primereact/api';
 import { Column } from 'primereact/column';
 import { Button } from 'primereact/button';
 import { Dialog } from 'primereact/dialog';
@@ -26,7 +27,8 @@ const CoursesPage = () => {
     const isAdmin = hasRole('admin');
     const [showDialog, setShowDialog] = useState(false);
     const [editing, setEditing] = useState<Course | null>(null);
-    const [globalFilter, setGlobalFilter] = useState('');
+    const [globalFilterValue, setGlobalFilterValue] = useState('');
+    const [filters, setFilters] = useState<DataTableFilterMeta>({ global: { value: null, matchMode: FilterMatchMode.CONTAINS } });
     const [courses, setCourses] = useState<Course[]>([]);
     const [loading, setLoading] = useState(true);
     const [deletingId, setDeletingId] = useState<number | null>(null);
@@ -162,7 +164,15 @@ const CoursesPage = () => {
         <div className="flex flex-column sm:flex-row gap-2 sm:align-items-center sm:justify-content-between">
             <span className="p-input-icon-left w-full sm:w-auto">
                 <i className="pi pi-search" />
-                <InputText placeholder="Search courses..." value={globalFilter} onChange={(e) => setGlobalFilter(e.target.value)} className="w-full sm:w-auto" />
+                <InputText
+                    placeholder="Search courses..."
+                    value={globalFilterValue}
+                    onChange={(e) => {
+                        setGlobalFilterValue(e.target.value);
+                        setFilters((prev) => ({ ...prev, global: { value: e.target.value || null, matchMode: FilterMatchMode.CONTAINS } }));
+                    }}
+                    className="w-full sm:w-auto"
+                />
             </span>
             {isAdmin && (
                 <div className="flex gap-2">
@@ -174,103 +184,103 @@ const CoursesPage = () => {
 
     return (
         <>
-        <ConfirmDialog />
-        <div className="grid">
-            <Toast ref={toast} />
-            <div className="col-12">
-                <PageHeader title="Courses" subtitle={isAdmin ? 'Manage university course catalog' : 'Browse university course catalog'} actionLabel={isAdmin ? 'New Course' : undefined} onAction={isAdmin ? openNew : undefined} />
-                <div className="surface-card shadow-1 border-round p-3">
-                    <DataTable value={courses} loading={loading} globalFilter={globalFilter} header={header} paginator rows={10} responsiveLayout="scroll" className="p-datatable-sm" emptyMessage="No courses found." tableStyle={{ minWidth: '36rem' }}>
-                        <Column field="courseCode" header="Code" sortable style={{ width: '100px', minWidth: '100px' }} />
-                        <Column field="courseName" header="Course Name" sortable style={{ minWidth: '10rem' }} />
-                        <Column field="creditHours" header="Credits" sortable style={{ width: '75px' }} className="text-center" body={(row) => <Tag value={row.creditHours} severity="info" />} />
-                        <Column field="departmentName" header="Department" sortable style={{ minWidth: '8rem' }} />
-                        <Column field="levelName" header="Level" sortable style={{ width: '100px' }} />
-                        <Column field="semesterName" header="Semester" sortable style={{ width: '110px' }} />
-                        <Column header="Status" body={(row) => <StatusChip active={row.isActive} />} style={{ width: '80px' }} />
-                        {isAdmin && <Column header="Actions" body={actionTemplate} style={{ width: '90px' }} className="white-space-nowrap" />}
-                    </DataTable>
-                </div>
-            </div>
-
-            {isAdmin && (
-                <Dialog visible={showDialog} onHide={() => setShowDialog(false)} header={editing ? 'Edit Course' : 'New Course'} modal className="w-full sm:w-32rem" breakpoints={{ '640px': '95vw' }}>
-                    <div className="flex flex-column gap-3 pt-2">
-                        <div className="grid">
-                            <div className="col-12 sm:col-4 flex flex-column gap-1">
-                                <label className="text-sm font-medium">Course Code</label>
-                                <InputText value={formData.courseCode} onChange={(e) => setFormData({ ...formData, courseCode: e.target.value })} placeholder="CS 101" />
-                            </div>
-                            <div className="col-12 sm:col-8 flex flex-column gap-1">
-                                <label className="text-sm font-medium">Course Name</label>
-                                <InputText value={formData.courseName} onChange={(e) => setFormData({ ...formData, courseName: e.target.value })} />
-                            </div>
-                        </div>
-                        <div className="grid">
-                            <div className="col-12 sm:col-4 flex flex-column gap-1">
-                                <label className="text-sm font-medium">Credit Hours</label>
-                                <InputNumber value={formData.creditHours} onValueChange={(e) => setFormData({ ...formData, creditHours: e.value ?? 3 })} min={1} max={6} />
-                            </div>
-                            <div className="col-12 sm:col-4 flex flex-column gap-1">
-                                <label className="text-sm font-medium">Department</label>
-                                <Dropdown value={formData.departmentId} options={departmentOptions} onChange={(e) => setFormData({ ...formData, departmentId: e.value })} placeholder="Select" />
-                            </div>
-                            <div className="col-12 sm:col-4 flex flex-column gap-1">
-                                <label className="text-sm font-medium">Level</label>
-                                <Dropdown value={formData.levelId} options={levelOptions} onChange={(e) => setFormData({ ...formData, levelId: e.value })} placeholder="Select" />
-                            </div>
-                        </div>
-                        <div className="grid">
-                            <div className="col-12 sm:col-4 flex flex-column gap-1">
-                                <label className="text-sm font-medium">Semester</label>
-                                <Dropdown value={formData.semesterId} options={semesterRefOptions} onChange={(e) => setFormData({ ...formData, semesterId: e.value })} placeholder="Select" showClear />
-                            </div>
-                        </div>
-                        <div className="flex flex-column gap-1">
-                            <label className="text-sm font-medium">Description</label>
-                            <InputTextarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} rows={3} autoResize />
-                        </div>
-                        <div className="flex align-items-center gap-2">
-                            <InputSwitch checked={formData.isActive} onChange={(e) => setFormData({ ...formData, isActive: e.value })} />
-                            <label className="text-sm">Active</label>
-                        </div>
-                        <div className="flex justify-content-end gap-2 pt-2">
-                            <Button label="Cancel" className="p-button-text" onClick={() => setShowDialog(false)} />
-                            <Button label="Save" icon="pi pi-check" onClick={save} />
-                        </div>
+            <ConfirmDialog />
+            <div className="grid">
+                <Toast ref={toast} />
+                <div className="col-12">
+                    <PageHeader title="Courses" subtitle={isAdmin ? 'Manage university course catalog' : 'Browse university course catalog'} actionLabel={isAdmin ? 'New Course' : undefined} onAction={isAdmin ? openNew : undefined} />
+                    <div className="surface-card shadow-1 border-round p-3">
+                        <DataTable value={courses} loading={loading} filters={filters} header={header} paginator rows={10} responsiveLayout="scroll" className="p-datatable-sm" emptyMessage="No courses found." tableStyle={{ minWidth: '36rem' }}>
+                            <Column field="courseCode" header="Code" sortable style={{ width: '100px', minWidth: '100px' }} />
+                            <Column field="courseName" header="Course Name" sortable style={{ minWidth: '10rem' }} />
+                            <Column field="creditHours" header="Credits" sortable style={{ width: '75px' }} className="text-center" body={(row) => <Tag value={row.creditHours} severity="info" />} />
+                            <Column field="departmentName" header="Department" sortable style={{ minWidth: '8rem' }} />
+                            <Column field="levelName" header="Level" sortable style={{ width: '100px' }} />
+                            <Column field="semesterName" header="Semester" sortable style={{ width: '110px' }} />
+                            <Column header="Status" body={(row) => <StatusChip active={row.isActive} />} style={{ width: '80px' }} />
+                            {isAdmin && <Column header="Actions" body={actionTemplate} style={{ width: '90px' }} className="white-space-nowrap" />}
+                        </DataTable>
                     </div>
-                </Dialog>
-            )}
+                </div>
 
-            {isAdmin && (
-                <BulkUploadDialog
-                    visible={showBulkUpload}
-                    onHide={() => setShowBulkUpload(false)}
-                    title="Bulk Upload Courses"
-                    columns={[
-                        { field: 'courseCode', header: 'Course Code', required: true },
-                        { field: 'courseName', header: 'Course Name', required: true },
-                        { field: 'creditHours', header: 'Credit Hours' },
-                        { field: 'description', header: 'Description' }
-                    ]}
-                    dropdowns={[
-                        { key: 'departmentId', label: 'Department', placeholder: 'Select department', options: departmentOptions, filter: true },
-                        { key: 'levelId', label: 'Level', placeholder: 'Select level', options: levelOptions },
-                        { key: 'semesterId', label: 'Semester', placeholder: 'Select semester', options: semesterRefOptions }
-                    ]}
-                    templateFileName="courses_upload_template.csv"
-                    onUpload={async (records, dropdownValues) => {
-                        return await CoursesService.bulkUploadCourses({
-                            courses: records,
-                            departmentId: dropdownValues.departmentId,
-                            levelId: dropdownValues.levelId,
-                            semesterId: dropdownValues.semesterId
-                        });
-                    }}
-                    onComplete={loadData}
-                />
-            )}
-        </div>
+                {isAdmin && (
+                    <Dialog visible={showDialog} onHide={() => setShowDialog(false)} header={editing ? 'Edit Course' : 'New Course'} modal className="w-full sm:w-32rem" breakpoints={{ '640px': '95vw' }}>
+                        <div className="flex flex-column gap-3 pt-2">
+                            <div className="grid">
+                                <div className="col-12 sm:col-4 flex flex-column gap-1">
+                                    <label className="text-sm font-medium">Course Code</label>
+                                    <InputText value={formData.courseCode} onChange={(e) => setFormData({ ...formData, courseCode: e.target.value })} placeholder="CS 101" />
+                                </div>
+                                <div className="col-12 sm:col-8 flex flex-column gap-1">
+                                    <label className="text-sm font-medium">Course Name</label>
+                                    <InputText value={formData.courseName} onChange={(e) => setFormData({ ...formData, courseName: e.target.value })} />
+                                </div>
+                            </div>
+                            <div className="grid">
+                                <div className="col-12 sm:col-4 flex flex-column gap-1">
+                                    <label className="text-sm font-medium">Credit Hours</label>
+                                    <InputNumber value={formData.creditHours} onValueChange={(e) => setFormData({ ...formData, creditHours: e.value ?? 3 })} min={1} max={6} />
+                                </div>
+                                <div className="col-12 sm:col-4 flex flex-column gap-1">
+                                    <label className="text-sm font-medium">Department</label>
+                                    <Dropdown value={formData.departmentId} options={departmentOptions} onChange={(e) => setFormData({ ...formData, departmentId: e.value })} placeholder="Select" />
+                                </div>
+                                <div className="col-12 sm:col-4 flex flex-column gap-1">
+                                    <label className="text-sm font-medium">Level</label>
+                                    <Dropdown value={formData.levelId} options={levelOptions} onChange={(e) => setFormData({ ...formData, levelId: e.value })} placeholder="Select" />
+                                </div>
+                            </div>
+                            <div className="grid">
+                                <div className="col-12 sm:col-4 flex flex-column gap-1">
+                                    <label className="text-sm font-medium">Semester</label>
+                                    <Dropdown value={formData.semesterId} options={semesterRefOptions} onChange={(e) => setFormData({ ...formData, semesterId: e.value })} placeholder="Select" showClear />
+                                </div>
+                            </div>
+                            <div className="flex flex-column gap-1">
+                                <label className="text-sm font-medium">Description</label>
+                                <InputTextarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} rows={3} autoResize />
+                            </div>
+                            <div className="flex align-items-center gap-2">
+                                <InputSwitch checked={formData.isActive} onChange={(e) => setFormData({ ...formData, isActive: e.value })} />
+                                <label className="text-sm">Active</label>
+                            </div>
+                            <div className="flex justify-content-end gap-2 pt-2">
+                                <Button label="Cancel" className="p-button-text" onClick={() => setShowDialog(false)} />
+                                <Button label="Save" icon="pi pi-check" onClick={save} />
+                            </div>
+                        </div>
+                    </Dialog>
+                )}
+
+                {isAdmin && (
+                    <BulkUploadDialog
+                        visible={showBulkUpload}
+                        onHide={() => setShowBulkUpload(false)}
+                        title="Bulk Upload Courses"
+                        columns={[
+                            { field: 'courseCode', header: 'Course Code', required: true },
+                            { field: 'courseName', header: 'Course Name', required: true },
+                            { field: 'creditHours', header: 'Credit Hours' },
+                            { field: 'description', header: 'Description' }
+                        ]}
+                        dropdowns={[
+                            { key: 'departmentId', label: 'Department', placeholder: 'Select department', options: departmentOptions, filter: true },
+                            { key: 'levelId', label: 'Level', placeholder: 'Select level', options: levelOptions },
+                            { key: 'semesterId', label: 'Semester', placeholder: 'Select semester', options: semesterRefOptions }
+                        ]}
+                        templateFileName="courses_upload_template.csv"
+                        onUpload={async (records, dropdownValues) => {
+                            return await CoursesService.bulkUploadCourses({
+                                courses: records,
+                                departmentId: dropdownValues.departmentId,
+                                levelId: dropdownValues.levelId,
+                                semesterId: dropdownValues.semesterId
+                            });
+                        }}
+                        onComplete={loadData}
+                    />
+                )}
+            </div>
         </>
     );
 };

@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { DataTable } from 'primereact/datatable';
+import { DataTable, DataTableFilterMeta } from 'primereact/datatable';
+import { FilterMatchMode } from 'primereact/api';
 import { Column } from 'primereact/column';
 import { Button } from 'primereact/button';
 import { Dialog } from 'primereact/dialog';
@@ -17,7 +18,8 @@ const AssessmentTypesPage = () => {
     const toast = useRef<Toast>(null);
     const [showDialog, setShowDialog] = useState(false);
     const [editing, setEditing] = useState<AssessmentType | null>(null);
-    const [globalFilter, setGlobalFilter] = useState('');
+    const [globalFilterValue, setGlobalFilterValue] = useState('');
+    const [filters, setFilters] = useState<DataTableFilterMeta>({ global: { value: null, matchMode: FilterMatchMode.CONTAINS } });
     const [loading, setLoading] = useState(true);
     const [deletingId, setDeletingId] = useState<number | null>(null);
     const [types, setTypes] = useState<AssessmentType[]>([]);
@@ -125,7 +127,15 @@ const AssessmentTypesPage = () => {
     const header = (
         <span className="p-input-icon-left w-full sm:w-auto">
             <i className="pi pi-search" />
-            <InputText placeholder="Search types..." value={globalFilter} onChange={(e) => setGlobalFilter(e.target.value)} className="w-full sm:w-auto" />
+            <InputText
+                placeholder="Search types..."
+                value={globalFilterValue}
+                onChange={(e) => {
+                    setGlobalFilterValue(e.target.value);
+                    setFilters((prev) => ({ ...prev, global: { value: e.target.value || null, matchMode: FilterMatchMode.CONTAINS } }));
+                }}
+                className="w-full sm:w-auto"
+            />
         </span>
     );
 
@@ -136,18 +146,7 @@ const AssessmentTypesPage = () => {
             <div className="col-12">
                 <PageHeader title="Assessment Types" subtitle="Configure assessment categories and their maximum weights" actionLabel="New Type" onAction={openNew} />
                 <div className="surface-card shadow-1 border-round p-3">
-                    <DataTable
-                        value={types}
-                        loading={loading}
-                        globalFilter={globalFilter}
-                        header={header}
-                        paginator
-                        rows={10}
-                        responsiveLayout="scroll"
-                        className="p-datatable-sm"
-                        emptyMessage="No assessment types found."
-                        tableStyle={{ minWidth: '20rem' }}
-                    >
+                    <DataTable value={types} loading={loading} filters={filters} header={header} paginator rows={10} responsiveLayout="scroll" className="p-datatable-sm" emptyMessage="No assessment types found." tableStyle={{ minWidth: '20rem' }}>
                         <Column field="typeName" header="Type Name" sortable style={{ minWidth: '10rem' }} />
                         <Column field="weight" header="Weight" body={weightTemplate} sortable style={{ width: '120px' }} />
                         <Column header="Actions" body={actionTemplate} style={{ width: '90px' }} className="white-space-nowrap" />

@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { DataTable } from 'primereact/datatable';
+import { DataTable, DataTableFilterMeta } from 'primereact/datatable';
+import { FilterMatchMode } from 'primereact/api';
 import { Column } from 'primereact/column';
 import { Button } from 'primereact/button';
 import { Dialog } from 'primereact/dialog';
@@ -22,7 +23,8 @@ const StudentsPage = () => {
     const toast = useRef<Toast>(null);
     const [showDialog, setShowDialog] = useState(false);
     const [editing, setEditing] = useState<Student | null>(null);
-    const [globalFilter, setGlobalFilter] = useState('');
+    const [globalFilterValue, setGlobalFilterValue] = useState('');
+    const [filters, setFilters] = useState<DataTableFilterMeta>({ global: { value: null, matchMode: FilterMatchMode.CONTAINS } });
     const [students, setStudents] = useState<Student[]>([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -127,7 +129,7 @@ const StudentsPage = () => {
     };
 
     const confirmToggleStatus = (s: Student) => {
-        console.log(s)
+        console.log(s);
         const action = s.isActive ? 'Deactivate' : 'Activate';
         confirmDialog({
             message: `${action} student "${s.firstName} ${s.lastName}" (${s.studentIndex})?`,
@@ -176,7 +178,15 @@ const StudentsPage = () => {
         <div className="flex flex-column sm:flex-row gap-2 sm:align-items-center sm:justify-content-between">
             <span className="p-input-icon-left w-full sm:w-auto">
                 <i className="pi pi-search" />
-                <InputText placeholder="Search by name or index..." value={globalFilter} onChange={(e) => setGlobalFilter(e.target.value)} className="w-full sm:w-auto" />
+                <InputText
+                    placeholder="Search by name or index..."
+                    value={globalFilterValue}
+                    onChange={(e) => {
+                        setGlobalFilterValue(e.target.value);
+                        setFilters((prev) => ({ ...prev, global: { value: e.target.value || null, matchMode: FilterMatchMode.CONTAINS } }));
+                    }}
+                    className="w-full sm:w-auto"
+                />
             </span>
             <div className="flex gap-2">
                 <Button label="Upload" icon="pi pi-upload" className="p-button-outlined p-button-sm" onClick={() => setShowBulkUpload(true)} />
@@ -195,7 +205,7 @@ const StudentsPage = () => {
                     <DataTable
                         value={students}
                         loading={loading}
-                        globalFilter={globalFilter}
+                        filters={filters}
                         header={header}
                         paginator
                         rows={10}

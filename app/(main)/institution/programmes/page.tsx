@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useRef, useEffect } from 'react';
-import { DataTable } from 'primereact/datatable';
+import { DataTable, DataTableFilterMeta } from 'primereact/datatable';
+import { FilterMatchMode } from 'primereact/api';
 import { Column } from 'primereact/column';
 import { Button } from 'primereact/button';
 import { Dialog } from 'primereact/dialog';
@@ -19,7 +20,8 @@ const ProgrammesPage = () => {
     const toast = useRef<Toast>(null);
     const [showDialog, setShowDialog] = useState(false);
     const [editing, setEditing] = useState<Programme | null>(null);
-    const [globalFilter, setGlobalFilter] = useState('');
+    const [globalFilterValue, setGlobalFilterValue] = useState('');
+    const [filters, setFilters] = useState<DataTableFilterMeta>({ global: { value: null, matchMode: FilterMatchMode.CONTAINS } });
     const [formData, setFormData] = useState({ facultyId: null as number | null, departmentId: null as number | null, programmeName: '', programmeCode: '', duration: 4, isActive: true });
     const [programmes, setProgrammes] = useState<Programme[]>([]);
     const [loading, setLoading] = useState(true);
@@ -90,7 +92,7 @@ const ProgrammesPage = () => {
         try {
             const { facultyId, ...rest } = formData;
             const payload = editing ? { id: editing.id, ...rest } : rest;
-            const res = await InstitutionService.saveProgramme({ ...payload,isActive:payload.isActive?1:0 });
+            const res = await InstitutionService.saveProgramme({ ...payload, isActive: payload.isActive ? 1 : 0 });
             toast.current?.show({ severity: 'success', summary: 'Saved', detail: res.message || 'Programme saved.', life: 3000 });
             setShowDialog(false);
             await loadData();
@@ -158,7 +160,7 @@ const ProgrammesPage = () => {
     const header = (
         <span className="p-input-icon-left w-full sm:w-auto">
             <i className="pi pi-search" />
-            <InputText placeholder="Search..." value={globalFilter} onChange={(e) => setGlobalFilter(e.target.value)} className="w-full sm:w-auto" />
+            <InputText placeholder="Search..." value={globalFilterValue} onChange={(e) => setGlobalFilterValue(e.target.value)} className="w-full sm:w-auto" />
         </span>
     );
 
@@ -169,18 +171,7 @@ const ProgrammesPage = () => {
             <div className="col-12">
                 <PageHeader title="Programmes" subtitle="Manage degree programmes" actionLabel="New Programme" onAction={openNew} />
                 <div className="surface-card shadow-1 border-round p-3">
-                    <DataTable
-                        value={programmes}
-                        loading={loading}
-                        globalFilter={globalFilter}
-                        header={header}
-                        paginator
-                        rows={10}
-                        responsiveLayout="scroll"
-                        className="p-datatable-sm"
-                        emptyMessage="No programmes found."
-                        tableStyle={{ minWidth: '32rem' }}
-                    >
+                    <DataTable value={programmes} loading={loading} filters={filters} header={header} paginator rows={10} responsiveLayout="scroll" className="p-datatable-sm" emptyMessage="No programmes found." tableStyle={{ minWidth: '32rem' }}>
                         <Column field="programmeCode" header="Code" sortable style={{ width: '100px' }} />
                         <Column field="programmeName" header="Programme" sortable style={{ minWidth: '10rem' }} />
                         <Column field="departmentName" header="Department" sortable style={{ minWidth: '8rem' }} />

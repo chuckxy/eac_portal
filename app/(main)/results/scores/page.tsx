@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
-import { DataTable } from 'primereact/datatable';
+import { DataTable, DataTableFilterMeta } from 'primereact/datatable';
+import { FilterMatchMode } from 'primereact/api';
 import { Column } from 'primereact/column';
 import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
@@ -14,7 +15,8 @@ import type { ScoreRecord, Semester } from '@/types';
 
 const ViewScoresPage = () => {
     const toast = useRef<Toast>(null);
-    const [globalFilter, setGlobalFilter] = useState('');
+    const [globalFilterValue, setGlobalFilterValue] = useState('');
+    const [filters, setFilters] = useState<DataTableFilterMeta>({ global: { value: null, matchMode: FilterMatchMode.CONTAINS } });
     const [filterSemester, setFilterSemester] = useState<number | null>(null);
     const [semesters, setSemesters] = useState<Semester[]>([]);
     const [scores, setScores] = useState<ScoreRecord[]>([]);
@@ -75,7 +77,15 @@ const ViewScoresPage = () => {
         <div className="flex flex-column sm:flex-row justify-content-between gap-2">
             <span className="p-input-icon-left w-full sm:w-auto">
                 <i className="pi pi-search" />
-                <InputText placeholder="Search..." value={globalFilter} onChange={(e) => setGlobalFilter(e.target.value)} className="w-full sm:w-auto" />
+                <InputText
+                    placeholder="Search..."
+                    value={globalFilterValue}
+                    onChange={(e) => {
+                        setGlobalFilterValue(e.target.value);
+                        setFilters((prev) => ({ ...prev, global: { value: e.target.value || null, matchMode: FilterMatchMode.CONTAINS } }));
+                    }}
+                    className="w-full sm:w-auto"
+                />
             </span>
             <Button label="Export" icon="pi pi-download" className="p-button-outlined p-button-sm w-full sm:w-auto" onClick={exportCSV} disabled={scores.length === 0} />
         </div>
@@ -103,7 +113,7 @@ const ViewScoresPage = () => {
                     <DataTable
                         ref={dt}
                         value={scores}
-                        globalFilter={globalFilter}
+                        filters={filters}
                         header={header}
                         paginator
                         rows={15}

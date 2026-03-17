@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useRef, useEffect } from 'react';
-import { DataTable } from 'primereact/datatable';
+import { DataTable, DataTableFilterMeta } from 'primereact/datatable';
+import { FilterMatchMode } from 'primereact/api';
 import { Column } from 'primereact/column';
 import { Button } from 'primereact/button';
 import { InputTextarea } from 'primereact/inputtextarea';
@@ -30,7 +31,8 @@ const BulkSmsPage = () => {
     const [recipients, setRecipients] = useState<SmsRecipient[]>([]);
     const [selectedRecipients, setSelectedRecipients] = useState<SmsRecipient[]>([]);
     const [loadingRecipients, setLoadingRecipients] = useState(false);
-    const [globalFilter, setGlobalFilter] = useState('');
+    const [globalFilterValue, setGlobalFilterValue] = useState('');
+    const [filters, setFilters] = useState<DataTableFilterMeta>({ global: { value: null, matchMode: FilterMatchMode.CONTAINS } });
 
     // ─── Message state ────────────────────────────────
     const [message, setMessage] = useState('');
@@ -210,7 +212,9 @@ const BulkSmsPage = () => {
 
     const nameTemplate = (row: SmsRecipient) => (
         <div>
-            <div className="font-medium">{row.firstName} {row.lastName}</div>
+            <div className="font-medium">
+                {row.firstName} {row.lastName}
+            </div>
             <div className="text-sm text-color-secondary">{row.studentIndex}</div>
         </div>
     );
@@ -219,7 +223,15 @@ const BulkSmsPage = () => {
         <div className="flex flex-column sm:flex-row gap-2 sm:align-items-center sm:justify-content-between">
             <span className="p-input-icon-left w-full sm:w-auto">
                 <i className="pi pi-search" />
-                <InputText placeholder="Search recipients..." value={globalFilter} onChange={(e) => setGlobalFilter(e.target.value)} className="w-full sm:w-auto" />
+                <InputText
+                    placeholder="Search recipients..."
+                    value={globalFilterValue}
+                    onChange={(e) => {
+                        setGlobalFilterValue(e.target.value);
+                        setFilters((prev) => ({ ...prev, global: { value: e.target.value || null, matchMode: FilterMatchMode.CONTAINS } }));
+                    }}
+                    className="w-full sm:w-auto"
+                />
             </span>
             <div className="text-sm text-color-secondary">
                 {selectedRecipients.length} of {recipients.length} selected
@@ -240,9 +252,7 @@ const BulkSmsPage = () => {
                 <div className="surface-card shadow-1 border-round p-3">
                     <div className="flex align-items-center justify-content-between mb-3">
                         <h6 className="m-0">Compose Message</h6>
-                        {balance !== null && (
-                            <Tag value={`Balance: ${balance}`} severity="info" icon="pi pi-wallet" />
-                        )}
+                        {balance !== null && <Tag value={`Balance: ${balance}`} severity="info" icon="pi pi-wallet" />}
                     </div>
 
                     <div className="flex flex-column gap-3">
@@ -260,27 +270,19 @@ const BulkSmsPage = () => {
                                     className="flex-1"
                                     showClear
                                 />
-                                <Button
-                                    icon="pi pi-plus"
-                                    tooltip="Register new Sender ID"
-                                    tooltipOptions={{ position: 'top' }}
-                                    onClick={() => setShowSenderIdDialog(true)}
-                                    className="p-button-outlined"
-                                />
+                                <Button icon="pi pi-plus" tooltip="Register new Sender ID" tooltipOptions={{ position: 'top' }} onClick={() => setShowSenderIdDialog(true)} className="p-button-outlined" />
                             </div>
-                            {senderIds.length === 0 && (
-                                <small className="text-color-secondary">No sender IDs registered. Click + to register one with mNotify.</small>
-                            )}
+                            {senderIds.length === 0 && <small className="text-color-secondary">No sender IDs registered. Click + to register one with mNotify.</small>}
                         </div>
 
                         <div className="flex flex-column gap-1">
                             <label className="text-sm font-medium">Message</label>
                             <InputTextarea value={message} onChange={(e) => setMessage(e.target.value)} rows={6} autoResize placeholder="Type your message here..." />
                             <div className="flex justify-content-between">
-                                <small className="text-color-secondary">{charCount} character{charCount !== 1 ? 's' : ''} · {smsPages} SMS page{smsPages > 1 ? 's' : ''}</small>
-                                {charCount > MAX_SMS_LENGTH && (
-                                    <small className="text-orange-500">Multi-page SMS</small>
-                                )}
+                                <small className="text-color-secondary">
+                                    {charCount} character{charCount !== 1 ? 's' : ''} · {smsPages} SMS page{smsPages > 1 ? 's' : ''}
+                                </small>
+                                {charCount > MAX_SMS_LENGTH && <small className="text-orange-500">Multi-page SMS</small>}
                             </div>
                         </div>
 
@@ -304,27 +306,9 @@ const BulkSmsPage = () => {
 
                     {/* Filters */}
                     <div className="flex flex-column sm:flex-row gap-2 mb-3">
-                        <Dropdown
-                            value={programmeId}
-                            options={[{ label: 'All Programmes', value: null }, ...programmeOptions]}
-                            onChange={(e) => setProgrammeId(e.value)}
-                            placeholder="Filter by programme"
-                            className="w-full sm:w-auto flex-1"
-                        />
-                        <Dropdown
-                            value={levelId}
-                            options={[{ label: 'All Levels', value: null }, ...levelOptions]}
-                            onChange={(e) => setLevelId(e.value)}
-                            placeholder="Filter by level"
-                            className="w-full sm:w-auto flex-1"
-                        />
-                        <Button
-                            label="Load"
-                            icon="pi pi-refresh"
-                            onClick={loadRecipients}
-                            loading={loadingRecipients}
-                            className="p-button-outlined"
-                        />
+                        <Dropdown value={programmeId} options={[{ label: 'All Programmes', value: null }, ...programmeOptions]} onChange={(e) => setProgrammeId(e.value)} placeholder="Filter by programme" className="w-full sm:w-auto flex-1" />
+                        <Dropdown value={levelId} options={[{ label: 'All Levels', value: null }, ...levelOptions]} onChange={(e) => setLevelId(e.value)} placeholder="Filter by level" className="w-full sm:w-auto flex-1" />
+                        <Button label="Load" icon="pi pi-refresh" onClick={loadRecipients} loading={loadingRecipients} className="p-button-outlined" />
                     </div>
 
                     {/* Recipients Table */}
@@ -335,7 +319,7 @@ const BulkSmsPage = () => {
                         selection={selectedRecipients}
                         onSelectionChange={(e) => setSelectedRecipients(e.value as SmsRecipient[])}
                         dataKey="studentIndex"
-                        globalFilter={globalFilter}
+                        filters={filters}
                         header={header}
                         paginator
                         rows={10}
@@ -348,7 +332,7 @@ const BulkSmsPage = () => {
                         <Column header="Student" body={nameTemplate} sortable sortField="lastName" style={{ minWidth: '10rem' }} />
                         <Column field="phone" header="Phone" sortable style={{ minWidth: '8rem' }} />
                         <Column field="programmeName" header="Programme" sortable style={{ minWidth: '8rem' }} />
-                        <Column field="levelName" header="Level" sortable style={{ width: '80px' }}  />
+                        <Column field="levelName" header="Level" sortable style={{ width: '80px' }} />
                     </DataTable>
                 </div>
             </div>
@@ -363,24 +347,11 @@ const BulkSmsPage = () => {
                     <DataTable value={senderIds} className="p-datatable-sm" emptyMessage="No sender IDs registered yet." responsiveLayout="scroll">
                         <Column field="senderName" header="Sender Name" sortable />
                         <Column field="purpose" header="Purpose" sortable />
-                        <Column
-                            field="status"
-                            header="Status"
-                            body={(row: SmsSenderId) => (
-                                <Tag
-                                    value={row.status}
-                                    severity={row.status === 'Approved' ? 'success' : row.status === 'Rejected' ? 'danger' : 'warning'}
-                                />
-                            )}
-                        />
+                        <Column field="status" header="Status" body={(row: SmsSenderId) => <Tag value={row.status} severity={row.status === 'Approved' ? 'success' : row.status === 'Rejected' ? 'danger' : 'warning'} />} />
                         <Column
                             header="Default"
                             body={(row: SmsSenderId) =>
-                                row.isDefault ? (
-                                    <Tag value="Default" severity="info" icon="pi pi-check" />
-                                ) : (
-                                    <Button label="Set Default" size="small" className="p-button-text p-button-sm" onClick={() => handleSetDefaultSenderId(row.id)} />
-                                )
+                                row.isDefault ? <Tag value="Default" severity="info" icon="pi pi-check" /> : <Button label="Set Default" size="small" className="p-button-text p-button-sm" onClick={() => handleSetDefaultSenderId(row.id)} />
                             }
                             style={{ width: '120px' }}
                         />
@@ -415,13 +386,7 @@ const BulkSmsPage = () => {
                 footer={
                     <div className="flex justify-content-end gap-2">
                         <Button label="Cancel" icon="pi pi-times" className="p-button-text" onClick={() => setShowSenderIdDialog(false)} />
-                        <Button
-                            label="Register with mNotify"
-                            icon="pi pi-check"
-                            onClick={handleRegisterSenderId}
-                            loading={registeringSenderId}
-                            disabled={!newSenderName.trim() || newSenderName.trim().length > 11}
-                        />
+                        <Button label="Register with mNotify" icon="pi pi-check" onClick={handleRegisterSenderId} loading={registeringSenderId} disabled={!newSenderName.trim() || newSenderName.trim().length > 11} />
                     </div>
                 }
             >

@@ -1,7 +1,8 @@
 'use client';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { DataTable } from 'primereact/datatable';
+import { DataTable, DataTableFilterMeta } from 'primereact/datatable';
 import { Column, ColumnEditorOptions } from 'primereact/column';
+import { FilterMatchMode } from 'primereact/api';
 import { Button } from 'primereact/button';
 import { Dropdown } from 'primereact/dropdown';
 import { InputNumber } from 'primereact/inputnumber';
@@ -22,7 +23,10 @@ import type { StudentScore, CourseAssignment, Assessment } from '@/types';
 const ScoreEntryPage = () => {
     const toast = useRef<Toast>(null);
     const { user } = useAuth();
-    const [globalFilter, setGlobalFilter] = useState('');
+    const [filters, setFilters] = useState<DataTableFilterMeta>({
+        global: { value: null, matchMode: FilterMatchMode.CONTAINS }
+    });
+    const [globalFilterValue, setGlobalFilterValue] = useState('');
 
     const [assignments, setAssignments] = useState<CourseAssignment[]>([]);
     const [assessments, setAssessments] = useState<Assessment[]>([]);
@@ -295,7 +299,15 @@ const ScoreEntryPage = () => {
             <div className="flex flex-column sm:flex-row justify-content-between gap-2">
                 <span className="p-input-icon-left">
                     <i className="pi pi-search" />
-                    <InputText placeholder="Search students..." value={globalFilter} onChange={(e) => setGlobalFilter(e.target.value)} />
+                    <InputText
+                        placeholder="Search students..."
+                        value={globalFilterValue}
+                        onChange={(e) => {
+                            const value = e.target.value;
+                            setGlobalFilterValue(value);
+                            setFilters((prev) => ({ ...prev, global: { value: value || null, matchMode: FilterMatchMode.CONTAINS } }));
+                        }}
+                    />
                 </span>
                 <div className="flex gap-2 flex-wrap">
                     <Button label="Template" icon="pi pi-download" className="p-button-outlined p-button-sm" onClick={downloadTemplate} tooltip="Download Excel template pre-filled with student list" tooltipOptions={{ position: 'top' }} />
@@ -370,7 +382,8 @@ const ScoreEntryPage = () => {
                             <div className="surface-card shadow-1 border-round p-3">
                                 <DataTable
                                     value={scores}
-                                    globalFilter={globalFilter}
+                                    filters={filters}
+                                    globalFilterFields={['studentIndex', 'firstName', 'lastName']}
                                     header={header}
                                     editMode="cell"
                                     responsiveLayout="scroll"

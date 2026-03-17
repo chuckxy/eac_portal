@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { DataTable } from 'primereact/datatable';
+import { DataTable, DataTableFilterMeta } from 'primereact/datatable';
+import { FilterMatchMode } from 'primereact/api';
 import { Column } from 'primereact/column';
 import { Button } from 'primereact/button';
 import { Dialog } from 'primereact/dialog';
@@ -26,7 +27,8 @@ const AssessmentsListPage = () => {
     const canManage = isAdmin || isLecturer;
     const [showDialog, setShowDialog] = useState(false);
     const [editing, setEditing] = useState<Assessment | null>(null);
-    const [globalFilter, setGlobalFilter] = useState('');
+    const [globalFilterValue, setGlobalFilterValue] = useState('');
+    const [filters, setFilters] = useState<DataTableFilterMeta>({ global: { value: null, matchMode: FilterMatchMode.CONTAINS } });
     const [loading, setLoading] = useState(true);
     const [deletingId, setDeletingId] = useState<number | null>(null);
     const [assessments, setAssessments] = useState<Assessment[]>([]);
@@ -173,79 +175,87 @@ const AssessmentsListPage = () => {
     const header = (
         <span className="p-input-icon-left w-full sm:w-auto">
             <i className="pi pi-search" />
-            <InputText placeholder="Search assessments..." value={globalFilter} onChange={(e) => setGlobalFilter(e.target.value)} className="w-full sm:w-auto" />
+            <InputText
+                placeholder="Search assessments..."
+                value={globalFilterValue}
+                onChange={(e) => {
+                    setGlobalFilterValue(e.target.value);
+                    setFilters((prev) => ({ ...prev, global: { value: e.target.value || null, matchMode: FilterMatchMode.CONTAINS } }));
+                }}
+                className="w-full sm:w-auto"
+            />
         </span>
     );
 
     return (
         <>
-        <ConfirmDialog />
-        <div className="grid">
-            <Toast ref={toast} />
-            <div className="col-12">
-                <PageHeader
-                    title="Assessments"
-                    subtitle={canManage ? 'Create and manage assessments for your course assignments' : 'View assessments for your course assignments'}
-                    actionLabel={canManage ? 'New Assessment' : undefined}
-                    onAction={canManage ? openNew : undefined}
-                />
-                <div className="surface-card shadow-1 border-round p-3">
-                    <DataTable
-                        value={assessments}
-                        loading={loading}
-                        globalFilter={globalFilter}
-                        header={header}
-                        paginator
-                        rows={10}
-                        responsiveLayout="scroll"
-                        className="p-datatable-sm"
-                        emptyMessage="No assessments found."
-                        tableStyle={{ minWidth: '38rem' }}
-                    >
-                        <Column header="Course" body={courseTemplate} sortable sortField="courseCode" style={{ minWidth: '9rem' }} />
-                        <Column field="title" header="Assessment" sortable style={{ minWidth: '9rem' }} />
-                        <Column field="typeName" header="Type" body={typeTag} sortable style={{ width: '90px' }} />
-                        <Column field="totalMarks" header="Marks" sortable style={{ width: '75px' }} className="text-center" />
-                        <Column field="weight" header="Weight" body={(row) => `${row.weight}%`} sortable style={{ width: '80px' }} />
-                        <Column field="assessmentDate" header="Date" body={(row: Assessment) => <div>{formatDateToString(new Date(row.assessmentDate))}</div>} sortable style={{ width: '110px' }} />
-                        <Column header="Actions" body={actionTemplate} style={{ width: '120px' }} className="white-space-nowrap" />
-                    </DataTable>
-                </div>
-            </div>
-
-            {canManage && (
-                <Dialog visible={showDialog} onHide={() => setShowDialog(false)} header={editing ? 'Edit Assessment' : 'New Assessment'} modal className="w-full sm:w-30rem" breakpoints={{ '640px': '95vw' }}>
-                    <div className="flex flex-column gap-3 pt-2">
-                        <div className="flex flex-column gap-1">
-                            <label className="text-sm font-medium">Course Assignment</label>
-                            <Dropdown value={formData.courseAssignmentId} options={courseOptions} onChange={(e) => setFormData({ ...formData, courseAssignmentId: e.value })} placeholder="Select course assignment" filter className="w-full" />
-                        </div>
-                        <div className="flex flex-column gap-1">
-                            <label className="text-sm font-medium">Assessment Name</label>
-                            <InputText value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} placeholder="e.g. CA Test 1" />
-                        </div>
-                        <div className="flex flex-column gap-1">
-                            <label className="text-sm font-medium">Assessment Type</label>
-                            <Dropdown value={formData.assessmentTypeId} options={typeOptions} onChange={(e) => setFormData({ ...formData, assessmentTypeId: e.value })} placeholder="Select type" className="w-full" />
-                        </div>
-                        <div className="grid">
-                            <div className="col-6 flex flex-column gap-1">
-                                <label className="text-sm font-medium">Total Marks</label>
-                                <InputNumber value={formData.totalMarks} onValueChange={(e) => setFormData({ ...formData, totalMarks: e.value ?? 100 })} min={1} />
-                            </div>
-                            <div className="col-6 flex flex-column gap-1">
-                                <label className="text-sm font-medium">Assessment Date</label>
-                                <Calendar value={formData.assessmentDate} onChange={(e) => setFormData({ ...formData, assessmentDate: e.value as Date })} dateFormat="yy-mm-dd" showIcon className="w-full" />
-                            </div>
-                        </div>
-                        <div className="flex justify-content-end gap-2 pt-2">
-                            <Button label="Cancel" className="p-button-text" onClick={() => setShowDialog(false)} />
-                            <Button label="Save" icon="pi pi-check" onClick={save} />
-                        </div>
+            <ConfirmDialog />
+            <div className="grid">
+                <Toast ref={toast} />
+                <div className="col-12">
+                    <PageHeader
+                        title="Assessments"
+                        subtitle={canManage ? 'Create and manage assessments for your course assignments' : 'View assessments for your course assignments'}
+                        actionLabel={canManage ? 'New Assessment' : undefined}
+                        onAction={canManage ? openNew : undefined}
+                    />
+                    <div className="surface-card shadow-1 border-round p-3">
+                        <DataTable
+                            value={assessments}
+                            loading={loading}
+                            filters={filters}
+                            header={header}
+                            paginator
+                            rows={10}
+                            responsiveLayout="scroll"
+                            className="p-datatable-sm"
+                            emptyMessage="No assessments found."
+                            tableStyle={{ minWidth: '38rem' }}
+                        >
+                            <Column header="Course" body={courseTemplate} sortable sortField="courseCode" style={{ minWidth: '9rem' }} />
+                            <Column field="title" header="Assessment" sortable style={{ minWidth: '9rem' }} />
+                            <Column field="typeName" header="Type" body={typeTag} sortable style={{ width: '90px' }} />
+                            <Column field="totalMarks" header="Marks" sortable style={{ width: '75px' }} className="text-center" />
+                            <Column field="weight" header="Weight" body={(row) => `${row.weight}%`} sortable style={{ width: '80px' }} />
+                            <Column field="assessmentDate" header="Date" body={(row: Assessment) => <div>{formatDateToString(new Date(row.assessmentDate))}</div>} sortable style={{ width: '110px' }} />
+                            <Column header="Actions" body={actionTemplate} style={{ width: '120px' }} className="white-space-nowrap" />
+                        </DataTable>
                     </div>
-                </Dialog>
-            )}
-        </div>
+                </div>
+
+                {canManage && (
+                    <Dialog visible={showDialog} onHide={() => setShowDialog(false)} header={editing ? 'Edit Assessment' : 'New Assessment'} modal className="w-full sm:w-30rem" breakpoints={{ '640px': '95vw' }}>
+                        <div className="flex flex-column gap-3 pt-2">
+                            <div className="flex flex-column gap-1">
+                                <label className="text-sm font-medium">Course Assignment</label>
+                                <Dropdown value={formData.courseAssignmentId} options={courseOptions} onChange={(e) => setFormData({ ...formData, courseAssignmentId: e.value })} placeholder="Select course assignment" filter className="w-full" />
+                            </div>
+                            <div className="flex flex-column gap-1">
+                                <label className="text-sm font-medium">Assessment Name</label>
+                                <InputText value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} placeholder="e.g. CA Test 1" />
+                            </div>
+                            <div className="flex flex-column gap-1">
+                                <label className="text-sm font-medium">Assessment Type</label>
+                                <Dropdown value={formData.assessmentTypeId} options={typeOptions} onChange={(e) => setFormData({ ...formData, assessmentTypeId: e.value })} placeholder="Select type" className="w-full" />
+                            </div>
+                            <div className="grid">
+                                <div className="col-6 flex flex-column gap-1">
+                                    <label className="text-sm font-medium">Total Marks</label>
+                                    <InputNumber value={formData.totalMarks} onValueChange={(e) => setFormData({ ...formData, totalMarks: e.value ?? 100 })} min={1} />
+                                </div>
+                                <div className="col-6 flex flex-column gap-1">
+                                    <label className="text-sm font-medium">Assessment Date</label>
+                                    <Calendar value={formData.assessmentDate} onChange={(e) => setFormData({ ...formData, assessmentDate: e.value as Date })} dateFormat="yy-mm-dd" showIcon className="w-full" />
+                                </div>
+                            </div>
+                            <div className="flex justify-content-end gap-2 pt-2">
+                                <Button label="Cancel" className="p-button-text" onClick={() => setShowDialog(false)} />
+                                <Button label="Save" icon="pi pi-check" onClick={save} />
+                            </div>
+                        </div>
+                    </Dialog>
+                )}
+            </div>
         </>
     );
 };
