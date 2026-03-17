@@ -96,10 +96,10 @@ const StudentDashboard = () => {
         grade: c.assessments?.[c.assessments.length - 1]?.grade ?? null,
         gp: c.gradePoint ?? '—'
     }));
-
+    console.log('Last Semester:', lastSemester);
     // Compute current GPA from transcript last semester
     const currentGpa = lastSemester?.gpa != null ? lastSemester.gpa.toFixed(2) : '—';
-
+    console.log(currentResults);
     return (
         <div className="grid">
             {/* Student Profile Card (mobile-first) */}
@@ -145,10 +145,10 @@ const StudentDashboard = () => {
                     <DataTable value={currentResults} responsiveLayout="scroll" className="p-datatable-sm" tableStyle={{ minWidth: '24rem' }}>
                         <Column field="courseCode" header="Code" style={{ width: '80px', minWidth: '80px' }} />
                         <Column field="courseName" header="Course" style={{ minWidth: '9rem' }} />
-                        <Column field="creditHours" header="CH" style={{ width: '40px' }} className="text-center hidden md:table-cell" />
+                        <Column field="creditHours" header="CH" style={{ width: '40px' }} className="text-center" />
                         <Column field="total" header="Total" style={{ width: '55px' }} className="text-center" body={(row) => <span className="font-semibold">{row.total}</span>} />
                         <Column header="Grade" style={{ width: '65px' }} className="text-center" body={(row) => <GradeBadge grade={row.grade} />} />
-                        <Column field="gp" header="GP" style={{ width: '50px' }} className="text-center hidden sm:table-cell" />
+                        <Column field="gp" header="GP" style={{ width: '50px' }} className="text-center" />
                     </DataTable>
                 </div>
             </div>

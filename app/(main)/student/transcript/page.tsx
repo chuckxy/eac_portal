@@ -80,7 +80,7 @@ const TranscriptPage = () => {
     }
 
     const semesters = transcript.semesters || [];
-
+    console.log(semesters);
     return (
         <div className="grid">
             <Toast ref={toast} />
@@ -136,7 +136,6 @@ const TranscriptPage = () => {
                                     return <Tag value={`${row.totalScore}%`} severity={sev} />;
                                 }}
                                 style={{ width: '70px' }}
-                                className="hidden sm:table-cell"
                             />
                             <Column header="Grade" body={(row) => <GradeBadge grade={row.grade} />} style={{ width: '70px' }} />
                             <Column field="gradePoint" header="GP" style={{ width: '45px' }} className="text-center" />
