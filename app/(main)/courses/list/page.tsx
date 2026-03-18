@@ -190,7 +190,19 @@ const CoursesPage = () => {
                 <div className="col-12">
                     <PageHeader title="Courses" subtitle={isAdmin ? 'Manage university course catalog' : 'Browse university course catalog'} actionLabel={isAdmin ? 'New Course' : undefined} onAction={isAdmin ? openNew : undefined} />
                     <div className="surface-card shadow-1 border-round p-3">
-                        <DataTable value={courses} loading={loading} filters={filters} header={header} paginator rows={10} responsiveLayout="scroll" className="p-datatable-sm" emptyMessage="No courses found." tableStyle={{ minWidth: '36rem' }}>
+                        <DataTable
+                            value={courses}
+                            loading={loading}
+                            filters={filters}
+                            header={header}
+                            paginator
+                            rows={20}
+                            rowsPerPageOptions={[20, 50, 100, courses.length]}
+                            responsiveLayout="scroll"
+                            className="p-datatable-sm"
+                            emptyMessage="No courses found."
+                            tableStyle={{ minWidth: '36rem' }}
+                        >
                             <Column field="courseCode" header="Code" sortable style={{ width: '100px', minWidth: '100px' }} />
                             <Column field="courseName" header="Course Name" sortable style={{ minWidth: '10rem' }} />
                             <Column field="creditHours" header="Credits" sortable style={{ width: '75px' }} className="text-center" body={(row) => <Tag value={row.creditHours} severity="info" />} />

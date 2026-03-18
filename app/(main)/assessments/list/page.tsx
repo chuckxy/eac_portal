@@ -206,7 +206,8 @@ const AssessmentsListPage = () => {
                             filters={filters}
                             header={header}
                             paginator
-                            rows={10}
+                            rows={20}
+                            rowsPerPageOptions={[20, 50, 100, assessments.length]}
                             responsiveLayout="scroll"
                             className="p-datatable-sm"
                             emptyMessage="No assessments found."

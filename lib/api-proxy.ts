@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const EXPRESS_BASE = process.env.NODE_ENV === 'production' ? process.env.EXPRESS_API_URL_REMOTE : process.env.EXPRESS_API_URL_REMOTE ?? 'http://localhost:5001';
+const EXPRESS_BASE = process.env.NODE_ENV === 'production' ? process.env.EXPRESS_API_URL_REMOTE : process.env.EXPRESS_API_URL_LOCAL ?? 'http://localhost:5001';
 
 /**
  * Forward a Next.js API request to the Express server and return its response.

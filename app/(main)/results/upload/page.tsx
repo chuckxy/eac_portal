@@ -36,14 +36,16 @@ const ScoreEntryPage = () => {
     const [loading, setLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
 
-    // Load course assignments on mount
+    // Load course assignments for the logged-in lecturer
     useEffect(() => {
-        CoursesService.getAssignments()
+        if (!user) return;
+        const params = user.role === 'lecturer' ? { lecturerId: Number(user.profileId) } : undefined;
+        CoursesService.getAssignments(params)
             .then(setAssignments)
             .catch(() => {
                 toast.current?.show({ severity: 'error', summary: 'Failed to load course assignments', life: 3000 });
             });
-    }, []);
+    }, [user]);
 
     // Load assessments when assignment changes
     useEffect(() => {
@@ -392,7 +394,7 @@ const ScoreEntryPage = () => {
                                     loading={loading}
                                     paginator
                                     rows={20}
-                                    rowsPerPageOptions={[10, 20, 50]}
+                                    rowsPerPageOptions={[20, 50, 100, scores.length]}
                                     rowClassName={(row) => (row.marksObtained === null ? 'bg-pink-300' : '')}
                                     tableStyle={{ minWidth: '28rem' }}
                                 >

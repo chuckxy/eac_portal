@@ -33,8 +33,8 @@ api.interceptors.response.use(
     async (error) => {
         const originalRequest = error.config;
 
-        // Only attempt refresh on 401 with TOKEN_EXPIRED code, and not for auth endpoints
-        if (error.response?.status === 401 && error.response?.data?.code === 'TOKEN_EXPIRED' && !originalRequest._retry && !originalRequest.url?.startsWith('/auth/')) {
+        // Only attempt refresh on 401 with TOKEN_EXPIRED code, and not for refresh/login endpoints
+        if (error.response?.status === 401 && error.response?.data?.code === 'TOKEN_EXPIRED' && !originalRequest._retry && !originalRequest.url?.includes('/auth/refresh') && !originalRequest.url?.includes('/auth/login')) {
             if (isRefreshing) {
                 return new Promise((resolve, reject) => {
                     failedQueue.push({ resolve, reject });

@@ -19,6 +19,7 @@ const StudentDashboard = () => {
     const [transcript, setTranscript] = useState<TranscriptData | null>(null);
     const [courses, setCourses] = useState<StudentCourseRow[]>([]);
     const [loading, setLoading] = useState(true);
+    const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards');
     const { user } = useAuth();
 
     const studentIndex = String(user?.profileId || '');
@@ -96,7 +97,6 @@ const StudentDashboard = () => {
         grade: c.assessments?.[c.assessments.length - 1]?.grade ?? null,
         gp: c.gradePoint ?? '—'
     }));
-    console.log('Last Semester:', lastSemester);
     // Compute current GPA from transcript last semester
     const currentGpa = lastSemester?.gpa != null ? lastSemester.gpa.toFixed(2) : '—';
 
@@ -141,15 +141,50 @@ const StudentDashboard = () => {
             {/* Current Semester Results */}
             <div className="col-12 lg:col-7">
                 <div className="surface-card shadow-1 border-round p-3">
-                    <h3 className="text-base font-semibold text-color mt-0 mb-3">Current Semester Results</h3>
-                    <DataTable value={currentResults} responsiveLayout="scroll" className="p-datatable-sm" tableStyle={{ minWidth: '24rem' }}>
-                        <Column field="courseCode" header="Code" style={{ width: '80px', minWidth: '80px' }} />
-                        <Column field="courseName" header="Course" style={{ minWidth: '9rem' }} />
-                        <Column field="creditHours" header="CH" style={{ width: '40px' }} className="text-center" />
-                        <Column field="total" header="Total" style={{ width: '55px' }} className="text-center" body={(row) => <span className="font-semibold">{row.total}</span>} />
-                        <Column header="Grade" style={{ width: '65px' }} className="text-center" body={(row) => <GradeBadge grade={row.grade} />} />
-                        <Column field="gp" header="GP" style={{ width: '50px' }} className="text-center" />
-                    </DataTable>
+                    <div className="flex align-items-center justify-content-between mb-3">
+                        <h3 className="text-base font-semibold text-color m-0">Current Semester Results</h3>
+                        <div className="flex gap-1">
+                            <Button icon="pi pi-th-large" className={`p-button-sm p-button-rounded ${viewMode === 'cards' ? '' : 'p-button-outlined'}`} onClick={() => setViewMode('cards')} tooltip="Card view" tooltipOptions={{ position: 'top' }} />
+                            <Button icon="pi pi-list" className={`p-button-sm p-button-rounded ${viewMode === 'list' ? '' : 'p-button-outlined'}`} onClick={() => setViewMode('list')} tooltip="List view" tooltipOptions={{ position: 'top' }} />
+                        </div>
+                    </div>
+
+                    {viewMode === 'cards' ? (
+                        <div className="grid">
+                            {currentResults.length === 0 && <div className="col-12 text-center text-color-secondary py-4">No results available.</div>}
+                            {currentResults.map((row, idx) => (
+                                <div key={idx} className="col-12 sm:col-6">
+                                    <div className="surface-border border-1 border-round p-3">
+                                        <div className="flex align-items-start justify-content-between mb-2">
+                                            <div>
+                                                <div className="font-bold text-sm">{row.courseCode}</div>
+                                                <div className="text-xs text-color-secondary">{row.courseName}</div>
+                                            </div>
+                                            <GradeBadge grade={row.grade} />
+                                        </div>
+                                        <div className="flex justify-content-between text-xs text-color-secondary mt-2 pt-2 border-top-1 surface-border">
+                                            <span>Credits: {row.creditHours}</span>
+                                            <span>
+                                                Total: <span className="font-semibold text-color">{row.total}</span>
+                                            </span>
+                                            <span>
+                                                GP: <span className="font-semibold text-color">{row.gp}</span>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <DataTable value={currentResults} responsiveLayout="scroll" className="p-datatable-sm" tableStyle={{ minWidth: '24rem' }}>
+                            <Column field="courseCode" header="Code" style={{ width: '80px', minWidth: '80px' }} />
+                            <Column field="courseName" header="Course" style={{ minWidth: '9rem' }} />
+                            <Column field="creditHours" header="CH" style={{ width: '40px' }} className="text-center" />
+                            <Column field="total" header="Total" style={{ width: '55px' }} className="text-center" body={(row) => <span className="font-semibold">{row.total}</span>} />
+                            <Column header="Grade" style={{ width: '65px' }} className="text-center" body={(row) => <GradeBadge grade={row.grade} />} />
+                            <Column field="gp" header="GP" style={{ width: '50px' }} className="text-center" />
+                        </DataTable>
+                    )}
                 </div>
             </div>
 

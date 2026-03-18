@@ -34,6 +34,7 @@ const LecturerDashboard = () => {
     const assignedCourses: LecturerAssignment[] = lecturerStats?.assignments ?? [];
     const courseCount = lecturerStats?.courseCount ?? 0;
     const studentCount = lecturerStats?.studentCount ?? 0;
+    const assessmentCount = lecturerStats?.assessmentCount ?? 0;
 
     if (loading) {
         return (
@@ -46,9 +47,9 @@ const LecturerDashboard = () => {
     return (
         <div className="grid">
             {/* Stat Cards */}
-            <StatCard title="Assigned Courses" value={courseCount} icon="pi pi-book" iconBg="bg-blue-500" />
+            <StatCard title="Courses" value={courseCount} icon="pi pi-book" iconBg="bg-blue-500" />
             <StatCard title="Total Students" value={studentCount} icon="pi pi-users" iconBg="bg-green-500" />
-            <StatCard title="Assignments" value={assignedCourses.length} icon="pi pi-list" iconBg="bg-orange-500" />
+            <StatCard title="Assessments" value={assessmentCount} icon="pi pi-list" iconBg="bg-orange-500" />
             <StatCard title="Programmes" value={new Set(assignedCourses.map((a) => a.programmeId)).size || '—'} icon="pi pi-sitemap" iconBg="bg-teal-500" />
 
             {/* Assigned Courses */}

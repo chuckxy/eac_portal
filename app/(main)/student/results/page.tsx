@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { Dropdown } from 'primereact/dropdown';
+import { Button } from 'primereact/button';
 import { Tag } from 'primereact/tag';
 import { Toast } from 'primereact/toast';
 import { Skeleton } from 'primereact/skeleton';
@@ -65,6 +66,7 @@ const MyResultsPage = () => {
     const [results, setResults] = useState<CourseResult[]>([]);
     const [loadingSemesters, setLoadingSemesters] = useState(true);
     const [loadingResults, setLoadingResults] = useState(false);
+    const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards');
 
     useEffect(() => {
         loadSemesters();
@@ -81,7 +83,7 @@ const MyResultsPage = () => {
         try {
             const data = await LookupService.getSemesters();
             const options = (data || []).map((s: any) => ({
-                label: s.semesterName ?? `Semester ${s.semesterNumber}, ${s.yearName ?? ''}`,
+                label: `${s.yearName ?? ''} — ${s.semesterName ?? `Semester ${s.semesterNumber}`}`.trim(),
                 value: s.id ?? s.semesterId
             }));
             setSemesterOptions(options);
@@ -180,17 +182,54 @@ const MyResultsPage = () => {
                             </div>
                         </div>
 
-                        {/* Results table */}
+                        {/* Results */}
                         <div className="surface-card shadow-1 border-round p-3">
-                            <DataTable value={results} responsiveLayout="scroll" className="p-datatable-sm" loading={loadingResults} emptyMessage="No results available." tableStyle={{ minWidth: '28rem' }}>
-                                <Column header="Course" body={courseTemplate} sortable sortField="courseCode" style={{ minWidth: '10rem' }} />
-                                <Column field="creditHours" header="Credits" sortable style={{ width: '70px' }} className="text-center" />
-                                <Column field="caScore" header="CA" sortable style={{ width: '55px' }} className="text-center hidden sm:table-cell" />
-                                <Column field="examScore" header="Exam" sortable style={{ width: '55px' }} className="text-center hidden sm:table-cell" />
-                                <Column header="Total" body={scoreTemplate} sortable sortField="totalScore" style={{ width: '80px' }} />
-                                <Column header="Grade" body={(row) => <GradeBadge grade={row.grade} />} sortable sortField="grade" style={{ width: '75px' }} />
-                                <Column field="gradePoint" header="GP" sortable style={{ width: '55px' }} className="text-center" />
-                            </DataTable>
+                            <div className="flex align-items-center justify-content-between mb-3">
+                                <h3 className="text-base font-semibold text-color m-0">Course Results</h3>
+                                <div className="flex gap-1">
+                                    <Button icon="pi pi-th-large" className={`p-button-sm p-button-rounded ${viewMode === 'cards' ? '' : 'p-button-outlined'}`} onClick={() => setViewMode('cards')} tooltip="Card view" tooltipOptions={{ position: 'top' }} />
+                                    <Button icon="pi pi-list" className={`p-button-sm p-button-rounded ${viewMode === 'list' ? '' : 'p-button-outlined'}`} onClick={() => setViewMode('list')} tooltip="List view" tooltipOptions={{ position: 'top' }} />
+                                </div>
+                            </div>
+
+                            {viewMode === 'cards' ? (
+                                <div className="grid">
+                                    {loadingResults && <div className="col-12 text-center py-4"><i className="pi pi-spin pi-spinner text-2xl" /></div>}
+                                    {!loadingResults && results.length === 0 && <div className="col-12 text-center text-color-secondary py-4">No results available.</div>}
+                                    {!loadingResults && results.map((row, idx) => {
+                                        const sev = row.totalScore >= 70 ? 'success' : row.totalScore >= 50 ? 'info' : row.totalScore >= 40 ? 'warning' : 'danger';
+                                        return (
+                                            <div key={idx} className="col-12 sm:col-6">
+                                                <div className="surface-border border-1 border-round p-3">
+                                                    <div className="flex align-items-start justify-content-between mb-2">
+                                                        <div>
+                                                            <div className="font-bold text-sm">{row.courseCode}</div>
+                                                            <div className="text-xs text-color-secondary">{row.courseName}</div>
+                                                        </div>
+                                                        <GradeBadge grade={row.grade} />
+                                                    </div>
+                                                    <div className="flex justify-content-between text-xs text-color-secondary mt-2 pt-2 border-top-1 surface-border">
+                                                        <span>CA: {row.caScore}</span>
+                                                        <span>Exam: {row.examScore}</span>
+                                                        <span>Total: <Tag value={`${row.totalScore}%`} severity={sev} className="text-xs" /></span>
+                                                        <span>GP: <span className="font-semibold text-color">{row.gradePoint}</span></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            ) : (
+                                <DataTable value={results} responsiveLayout="scroll" className="p-datatable-sm" loading={loadingResults} emptyMessage="No results available." tableStyle={{ minWidth: '28rem' }}>
+                                    <Column header="Course" body={courseTemplate} sortable sortField="courseCode" style={{ minWidth: '10rem' }} />
+                                    <Column field="creditHours" header="Credits" sortable style={{ width: '70px' }} className="text-center" />
+                                    <Column field="caScore" header="CA" sortable style={{ width: '55px' }} className="text-center hidden sm:table-cell" />
+                                    <Column field="examScore" header="Exam" sortable style={{ width: '55px' }} className="text-center hidden sm:table-cell" />
+                                    <Column header="Total" body={scoreTemplate} sortable sortField="totalScore" style={{ width: '80px' }} />
+                                    <Column header="Grade" body={(row) => <GradeBadge grade={row.grade} />} sortable sortField="grade" style={{ width: '75px' }} />
+                                    <Column field="gradePoint" header="GP" sortable style={{ width: '55px' }} className="text-center" />
+                                </DataTable>
+                            )}
                         </div>
                     </>
                 )}

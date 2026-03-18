@@ -177,7 +177,19 @@ const SemestersPage = () => {
             <div className="col-12">
                 <PageHeader title="Semesters" subtitle="Manage semesters within academic years" actionLabel="New Semester" onAction={openNew} />
                 <div className="surface-card shadow-1 border-round p-3">
-                    <DataTable value={semesters} loading={loading} filters={filters} header={header} paginator rows={10} responsiveLayout="scroll" className="p-datatable-sm" emptyMessage="No semesters found." tableStyle={{ minWidth: '36rem' }}>
+                    <DataTable
+                        value={semesters}
+                        loading={loading}
+                        filters={filters}
+                        header={header}
+                        paginator
+                        rows={20}
+                        rowsPerPageOptions={[20, 50, 100, semesters.length]}
+                        responsiveLayout="scroll"
+                        className="p-datatable-sm"
+                        emptyMessage="No semesters found."
+                        tableStyle={{ minWidth: '36rem' }}
+                    >
                         <Column field="yearName" header="Academic Year" sortable style={{ minWidth: '8rem' }} />
                         <Column field="semesterName" header="Semester" sortable style={{ minWidth: '8rem' }} />
                         <Column field="startDate" header="Start" sortable style={{ minWidth: '7rem' }} />

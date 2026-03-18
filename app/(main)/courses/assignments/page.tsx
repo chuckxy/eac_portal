@@ -18,7 +18,7 @@ import type { CourseAssignment } from '@/types';
 
 const CourseAssignmentsPage = () => {
     const toast = useRef<Toast>(null);
-    const { hasRole } = useAuth();
+    const { hasRole, user } = useAuth();
     const isAdmin = hasRole('admin');
     const [showDialog, setShowDialog] = useState(false);
     const [editing, setEditing] = useState<CourseAssignment | null>(null);
@@ -43,7 +43,8 @@ const CourseAssignmentsPage = () => {
     const loadData = async () => {
         try {
             setLoading(true);
-            const data = await CoursesService.getAssignments();
+            const params = user?.role === 'lecturer' ? { lecturerId: Number(user.profileId) } : undefined;
+            const data = await CoursesService.getAssignments(params);
             setAssignments(data);
         } catch (err) {
             toast.current?.show({ severity: 'error', summary: 'Error', detail: (err as any).response?.data?.message || (err as any).message, life: 3000 });
@@ -65,9 +66,9 @@ const CourseAssignmentsPage = () => {
     };
 
     useEffect(() => {
-        loadData();
+        if (user) loadData();
         if (isAdmin) loadDropdowns();
-    }, []);
+    }, [user]);
 
     const openNew = () => {
         setEditing(null);
@@ -188,7 +189,19 @@ const CourseAssignmentsPage = () => {
                     onAction={isAdmin ? openNew : undefined}
                 />
                 <div className="surface-card shadow-1 border-round p-3">
-                    <DataTable value={assignments} loading={loading} filters={filters} header={header} paginator rows={10} responsiveLayout="scroll" className="p-datatable-sm" emptyMessage="No assignments found." tableStyle={{ minWidth: '34rem' }}>
+                    <DataTable
+                        value={assignments}
+                        loading={loading}
+                        filters={filters}
+                        header={header}
+                        paginator
+                        rows={20}
+                        rowsPerPageOptions={[20, 50, 100, assignments.length]}
+                        responsiveLayout="scroll"
+                        className="p-datatable-sm"
+                        emptyMessage="No assignments found."
+                        tableStyle={{ minWidth: '34rem' }}
+                    >
                         <Column header="Course" body={courseTemplate} sortable sortField="courseCode" style={{ minWidth: '10rem' }} />
                         <Column field="lecturerName" header="Lecturer" sortable style={{ minWidth: '9rem' }} />
                         <Column field="programmeName" header="Programme" sortable style={{ minWidth: '8rem' }} />

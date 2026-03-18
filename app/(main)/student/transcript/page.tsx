@@ -17,6 +17,7 @@ const TranscriptPage = () => {
     const toast = useRef<Toast>(null);
     const [transcript, setTranscript] = useState<TranscriptData | null>(null);
     const [loading, setLoading] = useState(true);
+    const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards');
 
     useEffect(() => {
         loadTranscript();
@@ -111,6 +112,12 @@ const TranscriptPage = () => {
                 </div>
 
                 {/* Semester blocks */}
+                <div className="flex align-items-center justify-content-end mb-3">
+                    <div className="flex gap-1">
+                        <Button icon="pi pi-th-large" className={`p-button-sm p-button-rounded ${viewMode === 'cards' ? '' : 'p-button-outlined'}`} onClick={() => setViewMode('cards')} tooltip="Card view" tooltipOptions={{ position: 'top' }} />
+                        <Button icon="pi pi-list" className={`p-button-sm p-button-rounded ${viewMode === 'list' ? '' : 'p-button-outlined'}`} onClick={() => setViewMode('list')} tooltip="List view" tooltipOptions={{ position: 'top' }} />
+                    </div>
+                </div>
                 {semesters.map((sem, idx) => (
                     <div key={idx} className="surface-card shadow-1 border-round p-3 mb-3">
                         <div className="flex justify-content-between align-items-center mb-2">
@@ -125,21 +132,52 @@ const TranscriptPage = () => {
                                 <span className="font-bold hidden sm:inline">{sem.totalCreditHours}</span>
                             </div>
                         </div>
-                        <DataTable value={sem.courses} responsiveLayout="scroll" className="p-datatable-sm" showGridlines={false} tableStyle={{ minWidth: '24rem' }}>
-                            <Column field="courseCode" header="Code" style={{ width: '80px', minWidth: '80px' }} />
-                            <Column field="courseName" header="Course" style={{ minWidth: '10rem' }} />
-                            <Column field="creditHours" header="Cr" style={{ width: '45px' }} className="text-center" />
-                            <Column
-                                header="Score"
-                                body={(row) => {
+
+                        {viewMode === 'cards' ? (
+                            <div className="grid">
+                                {(sem.courses || []).map((row, cidx) => {
                                     const sev = row.totalScore >= 70 ? 'success' : row.totalScore >= 50 ? 'info' : row.totalScore >= 40 ? 'warning' : 'danger';
-                                    return <Tag value={`${row.totalScore}%`} severity={sev} />;
-                                }}
-                                style={{ width: '70px' }}
-                            />
-                            <Column header="Grade" body={(row) => <GradeBadge grade={row.grade} />} style={{ width: '70px' }} />
-                            <Column field="gradePoint" header="GP" style={{ width: '45px' }} className="text-center" />
-                        </DataTable>
+                                    return (
+                                        <div key={cidx} className="col-12 sm:col-6">
+                                            <div className="surface-border border-1 border-round p-3">
+                                                <div className="flex align-items-start justify-content-between mb-2">
+                                                    <div>
+                                                        <div className="font-bold text-sm">{row.courseCode}</div>
+                                                        <div className="text-xs text-color-secondary">{row.courseName}</div>
+                                                    </div>
+                                                    <GradeBadge grade={row.grade} />
+                                                </div>
+                                                <div className="flex justify-content-between text-xs text-color-secondary mt-2 pt-2 border-top-1 surface-border">
+                                                    <span>Credits: {row.creditHours}</span>
+                                                    <span>
+                                                        Score: <Tag value={`${row.totalScore}%`} severity={sev} className="text-xs" />
+                                                    </span>
+                                                    <span>
+                                                        GP: <span className="font-semibold text-color">{row.gradePoint}</span>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <DataTable value={sem.courses} responsiveLayout="scroll" className="p-datatable-sm" showGridlines={false} tableStyle={{ minWidth: '24rem' }}>
+                                <Column field="courseCode" header="Code" style={{ width: '80px', minWidth: '80px' }} />
+                                <Column field="courseName" header="Course" style={{ minWidth: '10rem' }} />
+                                <Column field="creditHours" header="Cr" style={{ width: '45px' }} className="text-center" />
+                                <Column
+                                    header="Score"
+                                    body={(row) => {
+                                        const sev = row.totalScore >= 70 ? 'success' : row.totalScore >= 50 ? 'info' : row.totalScore >= 40 ? 'warning' : 'danger';
+                                        return <Tag value={`${row.totalScore}%`} severity={sev} />;
+                                    }}
+                                    style={{ width: '70px' }}
+                                />
+                                <Column header="Grade" body={(row) => <GradeBadge grade={row.grade} />} style={{ width: '70px' }} />
+                                <Column field="gradePoint" header="GP" style={{ width: '45px' }} className="text-center" />
+                            </DataTable>
+                        )}
                     </div>
                 ))}
 

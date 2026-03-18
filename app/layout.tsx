@@ -12,7 +12,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     return (
         <html lang="en" suppressHydrationWarning>
             <head>
-                <link id="theme-link" href={`/theme/theme-light/magenta/theme.css`} rel="stylesheet"></link>
+                <link id="theme-link" href={`/theme/theme-light/blue/theme.css`} rel="stylesheet"></link>
             </head>
             <body>
                 <PrimeReactProvider>

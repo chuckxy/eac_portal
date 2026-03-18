@@ -306,6 +306,7 @@ export interface LecturerDashboardStats {
     assignments: LecturerAssignment[];
     courseCount: number;
     studentCount: number;
+    assessmentCount: number;
 }
 
 export interface StudentByLevel {
@@ -377,6 +378,7 @@ export interface TranscriptCourse {
     courseName: string;
     creditHours: number;
     totalScore: number;
+    grade: string;
     gradePoint: number;
     assessments: TranscriptAssessment[];
 }

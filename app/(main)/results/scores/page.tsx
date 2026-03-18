@@ -116,7 +116,8 @@ const ViewScoresPage = () => {
                         filters={filters}
                         header={header}
                         paginator
-                        rows={15}
+                        rows={20}
+                        rowsPerPageOptions={[20, 50, 100, scores.length]}
                         responsiveLayout="scroll"
                         className="p-datatable-sm"
                         emptyMessage="No scores found."

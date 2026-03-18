@@ -146,7 +146,19 @@ const AssessmentTypesPage = () => {
             <div className="col-12">
                 <PageHeader title="Assessment Types" subtitle="Configure assessment categories and their maximum weights" actionLabel="New Type" onAction={openNew} />
                 <div className="surface-card shadow-1 border-round p-3">
-                    <DataTable value={types} loading={loading} filters={filters} header={header} paginator rows={10} responsiveLayout="scroll" className="p-datatable-sm" emptyMessage="No assessment types found." tableStyle={{ minWidth: '20rem' }}>
+                    <DataTable
+                        value={types}
+                        loading={loading}
+                        filters={filters}
+                        header={header}
+                        paginator
+                        rows={20}
+                        rowsPerPageOptions={[20, 50, 100, types.length]}
+                        responsiveLayout="scroll"
+                        className="p-datatable-sm"
+                        emptyMessage="No assessment types found."
+                        tableStyle={{ minWidth: '20rem' }}
+                    >
                         <Column field="typeName" header="Type Name" sortable style={{ minWidth: '10rem' }} />
                         <Column field="weight" header="Weight" body={weightTemplate} sortable style={{ width: '120px' }} />
                         <Column header="Actions" body={actionTemplate} style={{ width: '90px' }} className="white-space-nowrap" />

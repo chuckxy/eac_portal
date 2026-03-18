@@ -60,7 +60,7 @@ const AcademicYearsPage = () => {
                 yearName: formData.yearName,
                 startDate: formData.startDate?.toISOString().split('T')[0],
                 endDate: formData.endDate?.toISOString().split('T')[0],
-                isCurrent: formData.isCurrent?1:0
+                isCurrent: formData.isCurrent ? 1 : 0
             };
             if (editingYear) payload.id = editingYear.id;
             const res = await AcademicService.saveYear(payload);
@@ -150,7 +150,8 @@ const AcademicYearsPage = () => {
                         globalFilter={globalFilter}
                         header={header}
                         paginator
-                        rows={10}
+                        rows={20}
+                        rowsPerPageOptions={[20, 50, 100, years.length]}
                         responsiveLayout="scroll"
                         className="p-datatable-sm"
                         emptyMessage="No academic years found."

@@ -14,7 +14,7 @@ export const LayoutProvider = (props: ChildContainerProps) => {
         inputStyle: 'outlined',
         menuMode: 'slim-plus',
         colorScheme: 'light',
-        theme: 'magenta',
+        theme: 'blue',
         scale: 14
     });
 

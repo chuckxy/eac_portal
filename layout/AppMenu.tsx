@@ -118,7 +118,7 @@ const AppMenu = () => {
                 {
                     label: 'Dashboard',
                     icon: 'pi pi-home',
-                    items: [{ label: 'My Dashboard', icon: 'pi pi-fw pi-graduation-cap', to: '/dashboard/student' }]
+                    items: [{ label: 'My Dashboard', icon: 'pi pi-fw pi-home', to: '/dashboard/student' }]
                 },
                 { separator: true },
                 {

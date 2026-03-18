@@ -171,7 +171,19 @@ const ProgrammesPage = () => {
             <div className="col-12">
                 <PageHeader title="Programmes" subtitle="Manage degree programmes" actionLabel="New Programme" onAction={openNew} />
                 <div className="surface-card shadow-1 border-round p-3">
-                    <DataTable value={programmes} loading={loading} filters={filters} header={header} paginator rows={10} responsiveLayout="scroll" className="p-datatable-sm" emptyMessage="No programmes found." tableStyle={{ minWidth: '32rem' }}>
+                    <DataTable
+                        value={programmes}
+                        loading={loading}
+                        filters={filters}
+                        header={header}
+                        paginator
+                        rows={20}
+                        rowsPerPageOptions={[20, 50, 100, programmes.length]}
+                        responsiveLayout="scroll"
+                        className="p-datatable-sm"
+                        emptyMessage="No programmes found."
+                        tableStyle={{ minWidth: '32rem' }}
+                    >
                         <Column field="programmeCode" header="Code" sortable style={{ width: '100px' }} />
                         <Column field="programmeName" header="Programme" sortable style={{ minWidth: '10rem' }} />
                         <Column field="departmentName" header="Department" sortable style={{ minWidth: '8rem' }} />

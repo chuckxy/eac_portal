@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { Dropdown } from 'primereact/dropdown';
+import { Button } from 'primereact/button';
 import { Tag } from 'primereact/tag';
 import { ProgressBar } from 'primereact/progressbar';
 import { Toast } from 'primereact/toast';
@@ -21,6 +22,7 @@ const MyCoursesPage = () => {
     const [courses, setCourses] = useState<StudentCourseRow[]>([]);
     const [loadingSemesters, setLoadingSemesters] = useState(true);
     const [loadingCourses, setLoadingCourses] = useState(false);
+    const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards');
 
     useEffect(() => {
         loadSemesters();
@@ -133,13 +135,51 @@ const MyCoursesPage = () => {
 
                 {selectedSemester != null && (
                     <div className="surface-card shadow-1 border-round p-3">
-                        <DataTable value={courses} responsiveLayout="scroll" className="p-datatable-sm" loading={loadingCourses} emptyMessage="No courses enrolled." tableStyle={{ minWidth: '26rem' }}>
-                            <Column header="Course" body={courseTemplate} sortable sortField="courseCode" style={{ minWidth: '10rem' }} />
-                            <Column field="creditHours" header="Cr" sortable style={{ width: '45px' }} className="text-center" />
-                            <Column field="lecturerName" header="Lecturer" sortable style={{ minWidth: '8rem' }} />
-                            <Column header="Progress" body={progressTemplate} style={{ width: '110px', minWidth: '110px' }} />
-                            <Column header="Score" body={scoreTemplate} sortable sortField="completedAssessments" style={{ width: '80px' }} />
-                        </DataTable>
+                        <div className="flex align-items-center justify-content-between mb-3">
+                            <h3 className="text-base font-semibold text-color m-0">Enrolled Courses</h3>
+                            <div className="flex gap-1">
+                                <Button icon="pi pi-th-large" className={`p-button-sm p-button-rounded ${viewMode === 'cards' ? '' : 'p-button-outlined'}`} onClick={() => setViewMode('cards')} tooltip="Card view" tooltipOptions={{ position: 'top' }} />
+                                <Button icon="pi pi-list" className={`p-button-sm p-button-rounded ${viewMode === 'list' ? '' : 'p-button-outlined'}`} onClick={() => setViewMode('list')} tooltip="List view" tooltipOptions={{ position: 'top' }} />
+                            </div>
+                        </div>
+
+                        {viewMode === 'cards' ? (
+                            <div className="grid">
+                                {loadingCourses && <div className="col-12 text-center py-4"><i className="pi pi-spin pi-spinner text-2xl" /></div>}
+                                {!loadingCourses && courses.length === 0 && <div className="col-12 text-center text-color-secondary py-4">No courses enrolled.</div>}
+                                {!loadingCourses && courses.map((row, idx) => {
+                                    const pct = row.totalAssessments > 0 ? Math.round((row.completedAssessments / row.totalAssessments) * 100) : 0;
+                                    const sev = pct === 100 ? 'success' : pct >= 50 ? 'info' : 'warning';
+                                    return (
+                                        <div key={idx} className="col-12 sm:col-6">
+                                            <div className="surface-border border-1 border-round p-3">
+                                                <div className="flex align-items-start justify-content-between mb-2">
+                                                    <div>
+                                                        <div className="font-bold text-sm">{row.courseCode}</div>
+                                                        <div className="text-xs text-color-secondary">{row.courseName}</div>
+                                                    </div>
+                                                    {row.totalAssessments > 0 ? <Tag value={`${pct}%`} severity={sev} /> : <span className="text-xs text-color-secondary">N/A</span>}
+                                                </div>
+                                                <ProgressBar value={pct} showValue={false} style={{ height: '6px' }} className="mb-2" />
+                                                <div className="flex justify-content-between text-xs text-color-secondary mt-2 pt-2 border-top-1 surface-border">
+                                                    <span>Credits: {row.creditHours}</span>
+                                                    <span>Lecturer: {row.lecturerName}</span>
+                                                    <span>{row.completedAssessments}/{row.totalAssessments} done</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <DataTable value={courses} responsiveLayout="scroll" className="p-datatable-sm" loading={loadingCourses} emptyMessage="No courses enrolled." tableStyle={{ minWidth: '26rem' }}>
+                                <Column header="Course" body={courseTemplate} sortable sortField="courseCode" style={{ minWidth: '8rem' }} />
+                                <Column field="creditHours" header="Cr" sortable style={{ width: '45px' }} className="text-center" />
+                                <Column field="lecturerName" header="Lecturer" sortable style={{ minWidth: '8rem' }} />
+                                <Column header="Progress" body={progressTemplate} style={{ width: '110px', minWidth: '110px' }} />
+                                <Column header="Score" body={scoreTemplate} sortable sortField="completedAssessments" style={{ width: '110px' }} />
+                            </DataTable>
+                        )}
                     </div>
                 )}
             </div>
