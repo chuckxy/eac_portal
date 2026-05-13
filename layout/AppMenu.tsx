@@ -72,6 +72,15 @@ const AppMenu = () => {
                 },
                 { separator: true },
                 {
+                    label: 'E-Library',
+                    icon: 'pi pi-book',
+                    items: [
+                        { label: 'Browse & Upload', icon: 'pi pi-fw pi-list', to: '/library' },
+                        { label: 'Categories', icon: 'pi pi-fw pi-tags', to: '/library/categories' }
+                    ]
+                },
+                { separator: true },
+                {
                     label: 'SMS',
                     icon: 'pi pi-envelope',
                     items: [{ label: 'Bulk SMS', icon: 'pi pi-fw pi-send', to: '/sms' }]
@@ -108,6 +117,11 @@ const AppMenu = () => {
                         { label: 'Score Entry', icon: 'pi pi-fw pi-pencil', to: '/results/upload' },
                         { label: 'View Scores', icon: 'pi pi-fw pi-eye', to: '/results/scores' }
                     ]
+                },
+                {
+                    label: 'E-Library',
+                    icon: 'pi pi-book',
+                    items: [{ label: 'Browse & Upload', icon: 'pi pi-fw pi-list', to: '/library' }]
                 }
             ];
         }
@@ -130,6 +144,11 @@ const AppMenu = () => {
                         { label: 'My Courses', icon: 'pi pi-fw pi-book', to: '/student/courses' },
                         { label: 'My Profile', icon: 'pi pi-fw pi-id-card', to: '/student/profile' }
                     ]
+                },
+                {
+                    label: 'E-Library',
+                    icon: 'pi pi-book',
+                    items: [{ label: 'Browse Ebooks', icon: 'pi pi-fw pi-list', to: '/library' }]
                 }
             ];
         }
