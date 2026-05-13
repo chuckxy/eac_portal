@@ -425,7 +425,7 @@ const LibraryPage = () => {
                                 rowsPerPageOptions={[20, 50, 100]}
                                 responsiveLayout="scroll"
                                 className="p-datatable-sm"
-                                emptyMessage={<EmptyState icon="pi pi-book" message="No ebooks yet. Upload one or import from an external source." />}
+                                emptyMessage={<EmptyState icon="pi pi-book" title="No ebooks yet" message="Upload one or import from an external source." />}
                                 tableStyle={{ minWidth: '40rem' }}
                             >
                                 <Column header="Title" body={titleBody} sortable sortField="title" style={{ minWidth: '18rem' }} />
@@ -541,7 +541,7 @@ const LibraryPage = () => {
                             {externalLoading && <ProgressBar mode="indeterminate" style={{ height: 4 }} />}
 
                             {externalResults.length === 0 && !externalLoading && (
-                                <EmptyState icon="pi pi-cloud" message="Search Google Books, Open Library, DBooks, archive.org or Library of Congress and import results." />
+                                <EmptyState icon="pi pi-cloud" title="No results" message="Search Google Books, Open Library, DBooks, archive.org or Library of Congress and import results." />
                             )}
 
                             <div className="grid">
