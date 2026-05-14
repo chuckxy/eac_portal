@@ -212,6 +212,12 @@ const StudentDashboard = () => {
                             </a>
                         </div>
                         <div className="col-6 sm:col-3">
+                            <a href="/library" className="flex flex-column align-items-center p-3 border-round surface-hover cursor-pointer no-underline text-color">
+                                <i className="pi pi-book text-2xl text-cyan-500 mb-2" />
+                                <span className="text-sm font-medium">E-Library</span>
+                            </a>
+                        </div>
+                        <div className="col-6 sm:col-3">
                             <a href="/student/profile" className="flex flex-column align-items-center p-3 border-round surface-hover cursor-pointer no-underline text-color">
                                 <i className="pi pi-user text-2xl text-purple-500 mb-2" />
                                 <span className="text-sm font-medium">Profile</span>

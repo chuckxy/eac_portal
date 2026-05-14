@@ -22,6 +22,7 @@ import { Checkbox } from 'primereact/checkbox';
 import PageHeader from '@/components/PageHeader';
 import EmptyState from '@/components/EmptyState';
 import { LibraryService, Ebook, LibraryCategory, ExternalEbook, BookProvider, SearchBy } from '@/lib/service/LibraryService';
+import { useAuth } from '@/layout/context/authcontext';
 
 const sourceOptions = [
     { label: 'All sources', value: '' },
@@ -97,6 +98,9 @@ const fileToDataUri = (file: File): Promise<string> =>
 
 const LibraryPage = () => {
     const toast = useRef<Toast>(null);
+    const { user } = useAuth();
+    const isStudent = user?.role === 'student';
+    const canManage = user?.role === 'admin' || user?.role === 'lecturer';
 
     // Browse state
     const [ebooks, setEbooks] = useState<Ebook[]>([]);
@@ -276,7 +280,7 @@ const LibraryPage = () => {
     // ─── Delete ──────────────────────────────────────────
     const confirmDelete = (row: Ebook) => {
         confirmDialog({
-            message: `Delete "${row.title}"? This will also remove the file from Cloudinary.`,
+            message: `Delete ${row.title}? This will also remove the file from Cloudinary.`,
             header: 'Confirm Delete',
             icon: 'pi pi-exclamation-triangle',
             acceptClassName: 'p-button-danger',
@@ -374,7 +378,7 @@ const LibraryPage = () => {
                 <Button
                     icon="pi pi-external-link"
                     className="p-button-text p-button-sm"
-                    tooltip="Open"
+                    tooltip={isStudent ? 'Read' : 'Open'}
                     tooltipOptions={{ position: 'top' }}
                     onClick={() => {
                         LibraryService.incrementDownload(row.id).catch(() => {});
@@ -382,8 +386,8 @@ const LibraryPage = () => {
                     }}
                 />
             )}
-            <Button icon="pi pi-pencil" className="p-button-text p-button-sm" tooltip="Edit" tooltipOptions={{ position: 'top' }} onClick={() => openUpload(row)} />
-            <Button icon="pi pi-trash" className="p-button-text p-button-danger p-button-sm" tooltip="Delete" tooltipOptions={{ position: 'top' }} onClick={() => confirmDelete(row)} />
+            {canManage && <Button icon="pi pi-pencil" className="p-button-text p-button-sm" tooltip="Edit" tooltipOptions={{ position: 'top' }} onClick={() => openUpload(row)} />}
+            {canManage && <Button icon="pi pi-trash" className="p-button-text p-button-danger p-button-sm" tooltip="Delete" tooltipOptions={{ position: 'top' }} onClick={() => confirmDelete(row)} />}
         </div>
     );
 
@@ -411,33 +415,97 @@ const LibraryPage = () => {
             <Toast ref={toast} />
             <ConfirmDialog />
             <div className="col-12">
-                <PageHeader title="E-Library" subtitle="Browse, upload and import ebooks (Cloudinary + Open Library / archive.org)" actionLabel="Upload Ebook" actionIcon="pi pi-upload" onAction={() => openUpload()} />
+                <PageHeader
+                    title="E-Library"
+                    subtitle={isStudent ? 'Browse uploaded ebooks and search the web for more' : 'Browse, upload and import ebooks (Cloudinary + Open Library / archive.org)'}
+                    actionLabel={canManage ? 'Upload Ebook' : undefined}
+                    actionIcon={canManage ? 'pi pi-upload' : undefined}
+                    onAction={canManage ? () => openUpload() : undefined}
+                />
 
                 <div className="surface-card shadow-1 border-round p-3">
                     <TabView>
                         <TabPanel header="Browse" leftIcon="pi pi-list mr-2">
-                            <DataTable
-                                value={ebooks}
-                                loading={loading}
-                                header={browseHeader}
-                                paginator
-                                rows={20}
-                                rowsPerPageOptions={[20, 50, 100]}
-                                responsiveLayout="scroll"
-                                className="p-datatable-sm"
-                                emptyMessage={<EmptyState icon="pi pi-book" title="No ebooks yet" message="Upload one or import from an external source." />}
-                                tableStyle={{ minWidth: '40rem' }}
-                            >
-                                <Column header="Title" body={titleBody} sortable sortField="title" style={{ minWidth: '18rem' }} />
-                                <Column field="categoryName" header="Category" sortable className="hidden md:table-cell" style={{ minWidth: '10rem' }} />
-                                <Column header="Source" body={sourceBody} sortable sortField="source" style={{ width: '8rem' }} />
-                                <Column field="publishedYear" header="Year" sortable className="hidden md:table-cell" style={{ width: '6rem' }} />
-                                <Column field="downloadCount" header="Reads" sortable className="hidden lg:table-cell" style={{ width: '6rem' }} />
-                                <Column header="Actions" body={actionBody} style={{ width: '12rem' }} className="white-space-nowrap" />
-                            </DataTable>
+                            {/* Mobile card view */}
+                            <div className="block md:hidden">
+                                <div className="mb-3">{browseHeader}</div>
+                                {loading && <ProgressBar mode="indeterminate" style={{ height: 4 }} />}
+                                {!loading && ebooks.length === 0 && (
+                                    <EmptyState icon="pi pi-book" title="No ebooks yet" message={canManage ? 'Upload one or import from an external source.' : 'Check back later or use Search & Read to find books online.'} />
+                                )}
+                                <div className="grid">
+                                    {ebooks.map((row) => (
+                                        <div key={row.id} className="col-12 sm:col-6">
+                                            <div className="surface-card border-1 surface-border border-round p-3 h-full flex gap-3">
+                                                {row.coverUrl ? (
+                                                    // eslint-disable-next-line @next/next/no-img-element
+                                                    <img
+                                                        src={row.coverUrl}
+                                                        alt=""
+                                                        style={{ width: 56, height: 80, objectFit: 'cover', borderRadius: 4 }}
+                                                        onError={(e) => ((e.currentTarget as HTMLImageElement).style.visibility = 'hidden')}
+                                                    />
+                                                ) : (
+                                                    <div className="bg-primary-100 text-primary-700 border-round flex align-items-center justify-content-center" style={{ width: 56, height: 80 }}>
+                                                        <i className="pi pi-book text-xl" />
+                                                    </div>
+                                                )}
+                                                <div className="flex flex-column flex-1 gap-1">
+                                                    <div className="font-medium text-sm line-height-3" title={row.title}>{row.title}</div>
+                                                    {row.authors && <div className="text-color-secondary text-xs">{row.authors}</div>}
+                                                    <div className="flex gap-1 flex-wrap mt-1">
+                                                        <Tag value={providerLabel(row.source)} severity={sourceTagSeverity(row.source) as any} />
+                                                        {row.publishedYear && <Tag value={String(row.publishedYear)} />}
+                                                    </div>
+                                                    <div className="flex gap-2 mt-2">
+                                                        <Button label="Details" icon="pi pi-eye" size="small" outlined onClick={() => setDetail(row)} />
+                                                        {(row.fileUrl || row.externalUrl) && (
+                                                            <Button
+                                                                label={isStudent ? 'Read' : 'Open'}
+                                                                icon="pi pi-external-link"
+                                                                size="small"
+                                                                onClick={() => {
+                                                                    LibraryService.incrementDownload(row.id).catch(() => {});
+                                                                    window.open(row.fileUrl || row.externalUrl, '_blank', 'noopener');
+                                                                }}
+                                                            />
+                                                        )}
+                                                        {canManage && (
+                                                            <Button icon="pi pi-trash" size="small" severity="danger" text onClick={() => confirmDelete(row)} aria-label="Delete" />
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Desktop table view */}
+                            <div className="hidden md:block">
+                                <DataTable
+                                    value={ebooks}
+                                    loading={loading}
+                                    header={browseHeader}
+                                    paginator
+                                    rows={20}
+                                    rowsPerPageOptions={[20, 50, 100]}
+                                    responsiveLayout="scroll"
+                                    className="p-datatable-sm"
+                                    emptyMessage={<EmptyState icon="pi pi-book" title="No ebooks yet" message={canManage ? 'Upload one or import from an external source.' : 'Check back later or use Search & Read to find books online.'} />}
+                                    tableStyle={{ minWidth: '40rem' }}
+                                >
+                                    <Column header="Title" body={titleBody} sortable sortField="title" style={{ minWidth: '18rem' }} />
+                                    <Column field="categoryName" header="Category" sortable style={{ minWidth: '10rem' }} />
+                                    <Column header="Source" body={sourceBody} sortable sortField="source" style={{ width: '8rem' }} />
+                                    <Column field="publishedYear" header="Year" sortable style={{ width: '6rem' }} />
+                                    <Column field="downloadCount" header="Reads" sortable style={{ width: '6rem' }} />
+                                    <Column header="Actions" body={actionBody} style={{ width: '12rem' }} className="white-space-nowrap" />
+                                </DataTable>
+                            </div>
                         </TabPanel>
 
-                        <TabPanel header="Import from external sources" leftIcon="pi pi-cloud-download mr-2">
+                        <TabPanel header={isStudent ? 'Search & Read' : 'Import from external sources'} leftIcon="pi pi-cloud-download mr-2">
                             {/* Provider selector */}
                             <div className="mb-3">
                                 <SelectButton
@@ -575,8 +643,16 @@ const LibraryPage = () => {
                                                     {item.fileUrl && <Tag value={item.fileFormat || 'read'} severity="success" icon="pi pi-arrow-up-right" />}
                                                 </div>
                                                 <div className="flex gap-2 mt-2">
-                                                    <Button label="Import" icon="pi pi-download" size="small" loading={importingId === item.externalId} onClick={() => importExternal(item)} />
-                                                    <Button label="View" icon="pi pi-external-link" size="small" outlined onClick={() => window.open(item.externalUrl, '_blank', 'noopener')} />
+                                                    {!isStudent && (
+                                                        <Button label="Import" icon="pi pi-download" size="small" loading={importingId === item.externalId} onClick={() => importExternal(item)} />
+                                                    )}
+                                                    <Button
+                                                        label={item.fileUrl ? 'Read' : 'View'}
+                                                        icon="pi pi-external-link"
+                                                        size="small"
+                                                        outlined={!isStudent}
+                                                        onClick={() => window.open(item.fileUrl || item.externalUrl, '_blank', 'noopener')}
+                                                    />
                                                 </div>
                                             </div>
                                         </div>
