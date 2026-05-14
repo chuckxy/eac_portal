@@ -521,10 +521,13 @@ const LibraryPage = () => {
                                         </span>
                                     )}
                                 />
+                                <div className="sm:hidden mt-2 text-sm text-color-secondary">
+                                    Provider: <span className="font-medium text-color">{providerOptions.find((p) => p.value === externalProvider)?.label}</span>
+                                </div>
                             </div>
 
                             {/* Search row */}
-                            <div className="flex flex-column md:flex-row gap-2 mb-2">
+                            <div className="flex flex-row gap-2 mb-2">
                                 <span className="p-input-icon-left flex-1">
                                     <i className="pi pi-search" />
                                     <InputText
@@ -535,11 +538,20 @@ const LibraryPage = () => {
                                         className="w-full"
                                     />
                                 </span>
-                                <Button label="Search" icon="pi pi-search" onClick={() => runExternalSearch(0)} loading={externalLoading} />
+                                <Button icon="pi pi-search" aria-label="Search" className="sm:hidden" onClick={() => runExternalSearch(0)} loading={externalLoading} />
+                                <Button label="Search" icon="pi pi-search" className="hidden sm:inline-flex" onClick={() => runExternalSearch(0)} loading={externalLoading} />
                                 <Button
                                     icon="pi pi-sliders-h"
                                     label={showAdvanced ? 'Hide filters' : 'Filters'}
                                     outlined
+                                    className="hidden sm:inline-flex"
+                                    onClick={() => setShowAdvanced((v) => !v)}
+                                />
+                                <Button
+                                    icon="pi pi-sliders-h"
+                                    aria-label="Filters"
+                                    outlined
+                                    className="sm:hidden"
                                     onClick={() => setShowAdvanced((v) => !v)}
                                 />
                             </div>
